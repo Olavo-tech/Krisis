@@ -1,18 +1,20 @@
 /**
  * Vercel Serverless Function: /api/analyze — Krisis
  * Suporta:
- * - Nome do concurso/vestibular/processo seletivo
- * - Link direto (URL) com extração segura de texto da página
- * - Conteúdo extraído de PDFs (até 28.000 caracteres)
+ * - Autenticação via Supabase JWT (limite persistente por user_id no Postgres)
+ * - Fallback por IP (3 análises/dia para visitantes não autenticados; 25/dia para usuários logados)
+ * - Nome do concurso/vestibular, Link direto (URL) e PDF extraído (até 28.000 chars)
  * - Model Armor contra Prompt Injection e dados fora de contexto
  */
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 6;
 const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
-const DAILY_MAX_REQUESTS = 30;
+const GUEST_DAILY_MAX = 3;
+const USER_DAILY_MAX = 25;
+
 const ipHits = new Map();
-const ipDailyHits = new Map();
+const subjectDailyHits = new Map();
 
 const FOCUS_MAP = {
   'datas de inscrição, isenção, provas e resultados': 'datas',
@@ -43,17 +45,98 @@ function applySecurityHeaders(res, origin) {
   }
 }
 
-function checkIpRateLimit(ip) {
+async function resolveSupabaseUser(authHeader) {
+  const supabaseUrl = (process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
+  const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+  if (!supabaseUrl || !supabaseAnonKey || !authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.slice(7).trim();
+  if (!token) return null;
+
+  try {
+    const resp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!resp.ok) return null;
+    const user = await resp.json();
+    if (user && user.id) {
+      return { id: user.id, email: user.email || '', token };
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function checkSupabasePersistentQuota(user, dailyMax) {
+  const supabaseUrl = (process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!supabaseUrl || !serviceKey || !user || !user.id) {
+    return null;
+  }
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const endpoint = `${supabaseUrl}/rest/v1/rpc/consume_krisis_quota`;
+
+  try {
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`
+      },
+      body: JSON.stringify({
+        p_user_id: user.id,
+        p_usage_date: todayKey,
+        p_daily_limit: dailyMax
+      })
+    });
+
+    if (!resp.ok) return null;
+    const result = await resp.json();
+    const row = Array.isArray(result) ? result[0] : result;
+    if (!row || typeof row.allowed !== 'boolean') return null;
+
+    const now = new Date();
+    const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+    const resetInSec = Math.max(60, Math.ceil((tomorrow.getTime() - now.getTime()) / 1000));
+
+    return {
+      ok: row.allowed,
+      retryAfterSec: row.allowed ? 0 : resetInSec,
+      quota: {
+        minuteRemaining: RATE_LIMIT_MAX_REQUESTS,
+        minuteLimit: RATE_LIMIT_MAX_REQUESTS,
+        dailyRemaining: Math.max(0, Number(row.remaining || 0)),
+        dailyLimit: dailyMax,
+        resetInSec: row.allowed ? 0 : resetInSec
+      },
+      reason: row.allowed
+        ? ''
+        : `Você atingiu o limite diário de ${dailyMax} análises da sua conta.`
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+async function checkQuotaForRequest(clientIp, user) {
   const now = Date.now();
-  const timestamps = ipHits.get(ip) || [];
-  const valid = timestamps.filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+  const rateKey = user ? `user:${user.id}` : `ip:${clientIp}`;
+  const dailyMax = user ? USER_DAILY_MAX : GUEST_DAILY_MAX;
 
-  const dailyList = ipDailyHits.get(ip) || [];
-  const validDaily = dailyList.filter(ts => now - ts < DAILY_WINDOW_MS);
+  const timestamps = ipHits.get(rateKey) || [];
+  const validMin = timestamps.filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
 
-  if (valid.length >= RATE_LIMIT_MAX_REQUESTS) {
-    ipHits.set(ip, valid);
-    const oldestMin = valid[0] || now;
+  if (validMin.length >= RATE_LIMIT_MAX_REQUESTS) {
+    ipHits.set(rateKey, validMin);
+    const oldestMin = validMin[0] || now;
     const retryAfterSec = Math.max(1, Math.ceil((RATE_LIMIT_WINDOW_MS - (now - oldestMin)) / 1000));
     return {
       ok: false,
@@ -61,44 +144,63 @@ function checkIpRateLimit(ip) {
       quota: {
         minuteRemaining: 0,
         minuteLimit: RATE_LIMIT_MAX_REQUESTS,
-        dailyRemaining: Math.max(0, DAILY_MAX_REQUESTS - validDaily.length),
-        dailyLimit: DAILY_MAX_REQUESTS,
+        dailyRemaining: dailyMax,
+        dailyLimit: dailyMax,
         resetInSec: retryAfterSec
       },
       reason: `Limite de ${RATE_LIMIT_MAX_REQUESTS} análises por minuto atingido. Aguarde ${retryAfterSec}s.`
     };
   }
 
-  if (validDaily.length >= DAILY_MAX_REQUESTS) {
-    ipDailyHits.set(ip, validDaily);
+  // Se o usuário estiver autenticado e o Supabase RPC estiver ativo, valida no banco Postgres por user_id
+  if (user) {
+    const dbCheck = await checkSupabasePersistentQuota(user, dailyMax);
+    if (dbCheck) {
+      if (dbCheck.ok) {
+        validMin.push(now);
+        ipHits.set(rateKey, validMin);
+        dbCheck.quota.minuteRemaining = Math.max(0, RATE_LIMIT_MAX_REQUESTS - validMin.length);
+      }
+      return dbCheck;
+    }
+  }
+
+  // Fallback em memória indexado por user_id (se logado) ou IP (se visitante)
+  const dailyList = subjectDailyHits.get(rateKey) || [];
+  const validDaily = dailyList.filter(ts => now - ts < DAILY_WINDOW_MS);
+
+  if (validDaily.length >= dailyMax) {
+    subjectDailyHits.set(rateKey, validDaily);
     const oldestDay = validDaily[0] || now;
     const retryAfterSec = Math.max(1, Math.ceil((DAILY_WINDOW_MS - (now - oldestDay)) / 1000));
     return {
       ok: false,
       retryAfterSec,
       quota: {
-        minuteRemaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - valid.length),
+        minuteRemaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - validMin.length),
         minuteLimit: RATE_LIMIT_MAX_REQUESTS,
         dailyRemaining: 0,
-        dailyLimit: DAILY_MAX_REQUESTS,
+        dailyLimit: dailyMax,
         resetInSec: retryAfterSec
       },
-      reason: `Você atingiu o limite diário gratuito de ${DAILY_MAX_REQUESTS} análises.`
+      reason: user
+        ? `Você atingiu o limite diário de ${dailyMax} análises da sua conta.`
+        : `Limite gratuito de ${dailyMax} análises/dia para visitantes atingido. Faça login para liberar ${USER_DAILY_MAX}/dia.`
     };
   }
 
-  valid.push(now);
+  validMin.push(now);
   validDaily.push(now);
-  ipHits.set(ip, valid);
-  ipDailyHits.set(ip, validDaily);
+  ipHits.set(rateKey, validMin);
+  subjectDailyHits.set(rateKey, validDaily);
 
   return {
     ok: true,
     quota: {
-      minuteRemaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - valid.length),
+      minuteRemaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - validMin.length),
       minuteLimit: RATE_LIMIT_MAX_REQUESTS,
-      dailyRemaining: Math.max(0, DAILY_MAX_REQUESTS - validDaily.length),
-      dailyLimit: DAILY_MAX_REQUESTS,
+      dailyRemaining: Math.max(0, dailyMax - validDaily.length),
+      dailyLimit: dailyMax,
       resetInSec: 0
     }
   };
@@ -186,7 +288,7 @@ async function fetchPageTextIfUrl(target) {
   }
 
   if (/\.pdf(\?.*)?$/i.test(trimmed)) {
-    throw new Error('Links diretos para arquivos .pdf devem ser baixados e anexados no botão "Anexar PDF" para leitura completa.');
+    throw new Error('Links diretos para arquivos .pdf devem ser baixados e anexados no botão "PDF" para leitura completa.');
   }
 
   const controller = new AbortController();
@@ -208,7 +310,7 @@ async function fetchPageTextIfUrl(target) {
 
     const contentType = resp.headers.get('content-type') || '';
     if (contentType.includes('application/pdf')) {
-      throw new Error('Este link aponta para um arquivo PDF. Baixe-o e arraste para a caixa de análise.');
+      throw new Error('Este link aponta para um arquivo PDF. Baixe-o e anexe na caixa de análise.');
     }
 
     const html = await resp.text();
@@ -247,7 +349,7 @@ module.exports = async (req, res) => {
 
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Client-Integrity');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Client-Integrity, Authorization');
       return res.status(204).end();
     }
 
@@ -257,8 +359,10 @@ module.exports = async (req, res) => {
 
     const forwardedFor = headers['x-forwarded-for'] || headers['x-real-ip'] || 'unknown';
     const clientIp = String(forwardedFor).split(',')[0].trim();
+    const authHeader = headers.authorization || headers.Authorization || '';
+    const authenticatedUser = await resolveSupabaseUser(authHeader);
 
-    const rateCheck = checkIpRateLimit(clientIp);
+    const rateCheck = await checkQuotaForRequest(clientIp, authenticatedUser);
     if (!rateCheck.ok) {
       res.setHeader('Retry-After', String(rateCheck.retryAfterSec || 60));
       return res.status(429).json({
