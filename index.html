@@ -1,0 +1,2393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7f9">
+  <title>Krisis — Discernimento sobre qualquer edital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Merriweather:wght@700;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      /* Teoria das Cores: Base Neutra Clara (60%), Cor Persistente Azul Cobalto (30%) e Acentos Sólidos Funcionais (10%) */
+      --bg-canvas: #eef1f5;
+      --surface-card: #ffffff;
+      --surface-subtle: #e5e9f0;
+      --border-crisp: #cbd5e1;
+
+      /* Cor Persistente (Dominante) */
+      --brand-cobalt: #1d4ed8;
+      --brand-cobalt-dark: #1e3a8a;
+      --brand-cobalt-soft: #eff6ff;
+
+      /* Acentos Sólidos Funcionais (Semânticos) */
+      --accent-emerald: #0f766e;
+      --accent-emerald-soft: #f0fdfa;
+      --accent-amber: #b45309;
+      --accent-amber-soft: #fffbeb;
+      --accent-terracotta: #c2410c;
+      --accent-terracotta-soft: #fff7ed;
+
+      /* Tipografia */
+      --ink-dark: #111827;
+      --ink-body: #374151;
+      --ink-muted: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      background-color: var(--bg-canvas);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--ink-dark);
+      min-height: 135dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+      position: relative;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      body, body * {
+        cursor: none !important;
+      }
+    }
+
+    /* Fundo editorial claro com malha arquitetônica sutil e bloco sólido de ancoragem */
+    .ambient-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-color: var(--bg-canvas);
+      background-image:
+        linear-gradient(to right, rgba(17, 24, 39, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(17, 24, 39, 0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .aurora-beam {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      z-index: 30;
+      background: linear-gradient(
+        90deg,
+        var(--brand-cobalt) 0%,
+        var(--brand-cobalt) 64%,
+        var(--accent-emerald) 64%,
+        var(--accent-emerald) 78%,
+        var(--accent-amber) 78%,
+        var(--accent-amber) 90%,
+        var(--accent-terracotta) 90%,
+        var(--accent-terracotta) 100%
+      );
+      pointer-events: none;
+    }
+
+    .horizon-waves {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 180px;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    #liquidCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Z-index 120 garante que o cursor customizado apareça acima do modal de login (z-index 90) */
+    #stageCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      pointer-events: none;
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: max(9vh, calc(env(safe-area-inset-top, 20px) + 36px)) 18px 48px;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* Barra superior exibida apenas quando o usuário já está autenticado */
+    .top-auth-bar {
+      width: 100%;
+      max-width: 720px;
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .top-auth-bar.is-logged {
+      display: flex;
+    }
+
+    .auth-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+      border: 1.5px solid var(--border-crisp);
+      border-radius: 999px;
+      height: 36px;
+      padding: 0 14px;
+      font-family: inherit;
+      font-size: 0.79rem;
+      font-weight: 600;
+      color: var(--ink-dark);
+      box-shadow:
+        0 4px 10px rgba(15, 23, 42, 0.08),
+        0 10px 22px -6px rgba(15, 23, 42, 0.14);
+      transition: all 0.18s ease;
+    }
+
+    .auth-chip:hover {
+      border-color: var(--brand-cobalt);
+      color: var(--brand-cobalt);
+      transform: translateY(-1px);
+    }
+
+    .auth-chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #059669;
+    }
+
+    h1 {
+      font-family: 'Permanent Marker', cursive;
+      font-style: normal;
+      font-size: clamp(3.6rem, 8.6vw, 6.1rem);
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      line-height: 1.04;
+      max-width: 780px;
+      margin-bottom: 14px;
+      color: #090d16;
+      text-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    }
+
+    .hero-sub {
+      font-size: clamp(0.95rem, 1.5vw, 1.06rem);
+      color: var(--ink-body);
+      max-width: 490px;
+      line-height: 1.52;
+      margin-bottom: 30px;
+      font-weight: 400;
+    }
+
+    .command-box {
+      width: 100%;
+      max-width: 720px;
+      background: var(--surface-card);
+      border: 1.5px solid var(--border-crisp);
+      border-top: 4px solid var(--brand-cobalt);
+      border-radius: 24px;
+      padding: 16px 18px;
+      box-shadow:
+        0 4px 8px rgba(15, 23, 42, 0.08),
+        0 16px 32px -6px rgba(15, 23, 42, 0.18),
+        0 32px 64px -14px rgba(15, 23, 42, 0.24);
+      text-align: left;
+      position: relative;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .command-box:focus-within {
+      transform: translateY(-2px);
+      border-color: var(--brand-cobalt);
+      box-shadow:
+        0 6px 12px rgba(29, 78, 216, 0.12),
+        0 22px 44px -8px rgba(15, 23, 42, 0.22),
+        0 38px 72px -16px rgba(15, 23, 42, 0.28);
+    }
+
+    .command-box.is-dragover {
+      border-color: var(--brand-cobalt);
+      background: var(--brand-cobalt-soft);
+      transform: scale(1.01);
+    }
+
+    .inline-notice {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .inline-notice.is-visible {
+      display: flex;
+    }
+
+    .input-stage {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 12px;
+    }
+
+    .btn-attach-pdf {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 13px;
+      border-radius: 999px;
+      border: 1.5px solid #bfdbfe;
+      background: var(--brand-cobalt-soft);
+      color: var(--brand-cobalt);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .btn-attach-pdf:hover, .btn-attach-pdf:active {
+      background: var(--brand-cobalt);
+      border-color: var(--brand-cobalt);
+      color: #ffffff;
+    }
+
+    .edital-textarea {
+      width: 100%;
+      height: 36px;
+      min-height: 36px;
+      max-height: 132px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 24px;
+      color: var(--ink-dark);
+      outline: none;
+      resize: none;
+      overflow-y: hidden;
+      padding: 6px 34px 6px 2px;
+      clip-path: inset(0 0% 0 0);
+    }
+
+    .edital-textarea::placeholder {
+      color: #9ca3af;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-clear-x {
+      position: absolute;
+      right: 0;
+      top: 4px;
+      transform: scale(0.75);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border-crisp);
+      background: var(--surface-subtle);
+      color: var(--ink-body);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .btn-clear-x.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .btn-clear-x:hover {
+      background: var(--ink-dark);
+      color: #ffffff;
+      border-color: var(--ink-dark);
+    }
+
+    .pdf-attachment-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 13px;
+      background: var(--brand-cobalt-soft);
+      border: 1px solid #bfdbfe;
+      color: var(--brand-cobalt-dark);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .pdf-attachment-bar.is-visible {
+      display: flex;
+    }
+
+    .pdf-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pdf-remove-btn {
+      background: #ffffff;
+      border: 1px solid var(--border-crisp);
+      color: var(--ink-dark);
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+      transition: all 0.18s ease;
+    }
+
+    .pdf-remove-btn:hover {
+      background: var(--ink-dark);
+      border-color: var(--ink-dark);
+      color: #ffffff;
+    }
+
+    .command-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-crisp);
+    }
+
+    .pills-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-bottom: 2px;
+    }
+
+    .pills-group::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Pílulas com cores sólidas funcionais por categoria (quando ativas) */
+    .focus-pill {
+      appearance: none;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1.5px solid var(--border-crisp);
+      background: var(--surface-subtle);
+      color: var(--ink-muted);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 500;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      user-select: none;
+    }
+
+    .focus-pill .pill-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      border: 1.5px solid #9ca3af;
+      color: transparent;
+      transition: all 0.18s ease;
+    }
+
+    .focus-pill:hover {
+      border-color: #9ca3af;
+      color: var(--ink-dark);
+    }
+
+    /* 1. Datas -> Azul Cobalto (Persistente) */
+    .focus-pill[data-pill="datas"].active {
+      background: var(--brand-cobalt-soft);
+      color: var(--brand-cobalt);
+      border-color: var(--brand-cobalt);
+      font-weight: 600;
+    }
+    .focus-pill[data-pill="datas"].active .pill-check {
+      background: var(--brand-cobalt);
+      border-color: var(--brand-cobalt);
+      color: #ffffff;
+    }
+
+    /* 2. Vagas -> Verde Esmeralda */
+    .focus-pill[data-pill="vagas"].active {
+      background: var(--accent-emerald-soft);
+      color: var(--accent-emerald);
+      border-color: var(--accent-emerald);
+      font-weight: 600;
+    }
+    .focus-pill[data-pill="vagas"].active .pill-check {
+      background: var(--accent-emerald);
+      border-color: var(--accent-emerald);
+      color: #ffffff;
+    }
+
+    /* 3. Requisitos -> Âmbar Ocre */
+    .focus-pill[data-pill="requisitos"].active {
+      background: var(--accent-amber-soft);
+      color: var(--accent-amber);
+      border-color: var(--accent-amber);
+      font-weight: 600;
+    }
+    .focus-pill[data-pill="requisitos"].active .pill-check {
+      background: var(--accent-amber);
+      border-color: var(--accent-amber);
+      color: #ffffff;
+    }
+
+    /* 4. Provas -> Terracota / Coral */
+    .focus-pill[data-pill="provas"].active {
+      background: var(--accent-terracotta-soft);
+      color: var(--accent-terracotta);
+      border-color: var(--accent-terracotta);
+      font-weight: 600;
+    }
+    .focus-pill[data-pill="provas"].active .pill-check {
+      background: var(--accent-terracotta);
+      border-color: var(--accent-terracotta);
+      color: #ffffff;
+    }
+
+    .send-cluster {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .quota-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 11px;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--ink-body);
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-crisp);
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .quota-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #059669;
+      flex-shrink: 0;
+    }
+
+    .quota-pill.is-warning {
+      color: #b45309;
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .quota-pill.is-warning .quota-dot {
+      background: #d97706;
+    }
+
+    .quota-pill.is-cooldown {
+      color: #b91c1c;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .quota-pill.is-cooldown .quota-dot {
+      background: #dc2626;
+    }
+
+    /* Botão principal na cor persistente (Azul Cobalto sólido) */
+    .btn-generate {
+      background: var(--brand-cobalt);
+      color: #ffffff;
+      border: none;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.28);
+      position: relative;
+    }
+
+    .btn-generate:hover:not(:disabled) {
+      background: var(--brand-cobalt-dark);
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    .btn-generate:disabled {
+      background: #9ca3af;
+      box-shadow: none;
+      opacity: 0.85;
+    }
+
+    .btn-generate:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    .btn-paper-plane {
+      width: 16px;
+      height: 16px;
+      transform: rotate(45deg);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .btn-paper-plane.is-launched {
+      opacity: 0;
+      transform: rotate(45deg) translateX(16px) scale(0.5);
+    }
+
+    /* Exemplos claros com bordas/badges de cores sólidas distintas */
+    .quick-samples {
+      margin-top: 18px;
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+      font-weight: 500;
+    }
+
+    .sample-chip {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #ffffff;
+      border: 1.5px solid var(--border-crisp);
+      color: var(--ink-dark);
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      font-size: 0.79rem;
+      font-weight: 600;
+      box-shadow:
+        0 3px 6px rgba(15, 23, 42, 0.07),
+        0 10px 20px -6px rgba(15, 23, 42, 0.15);
+      transition: all 0.18s ease;
+    }
+
+    .sample-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .sample-chip[data-theme="cobalt"]:hover {
+      background: var(--brand-cobalt-soft);
+      border-color: var(--brand-cobalt);
+      color: var(--brand-cobalt);
+    }
+    .sample-chip[data-theme="cobalt"] .sample-dot { background: var(--brand-cobalt); }
+
+    .sample-chip[data-theme="amber"]:hover {
+      background: var(--accent-amber-soft);
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+    }
+    .sample-chip[data-theme="amber"] .sample-dot { background: var(--accent-amber); }
+
+    .sample-chip[data-theme="emerald"]:hover {
+      background: var(--accent-emerald-soft);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+    .sample-chip[data-theme="emerald"] .sample-dot { background: var(--accent-emerald); }
+
+    .sample-chip[data-theme="terracotta"]:hover {
+      background: var(--accent-terracotta-soft);
+      border-color: var(--accent-terracotta);
+      color: var(--accent-terracotta);
+    }
+    .sample-chip[data-theme="terracotta"] .sample-dot { background: var(--accent-terracotta); }
+
+    .destination-section {
+      width: 100%;
+      max-width: 720px;
+      margin-top: 26vh;
+      margin-bottom: 10vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      min-height: 120px;
+    }
+
+    .result-wrapper {
+      width: 100%;
+      display: none;
+      opacity: 0;
+      transform: translate3d(0, 14px, 0) scale(0.985);
+      transition:
+        opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .result-wrapper.is-rendered {
+      display: block;
+    }
+
+    .result-wrapper.is-visible {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .result-dock {
+      width: 100%;
+      background: var(--surface-card);
+      border: 1.5px solid var(--border-crisp);
+      border-top: 4px solid var(--brand-cobalt);
+      border-radius: 24px;
+      padding: 22px 24px;
+      box-shadow:
+        0 4px 8px rgba(15, 23, 42, 0.08),
+        0 16px 32px -6px rgba(15, 23, 42, 0.18),
+        0 32px 64px -14px rgba(15, 23, 42, 0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: left;
+      position: relative;
+    }
+
+    .result-dock-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-bottom: 13px;
+      border-bottom: 1px solid var(--border-crisp);
+    }
+
+    .result-dock-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .result-dock-title {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: var(--ink-dark);
+      letter-spacing: -0.02em;
+    }
+
+    .result-dock-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--brand-cobalt);
+      background: var(--brand-cobalt-soft);
+      border: 1px solid #bfdbfe;
+      padding: 3px 10px;
+      border-radius: 999px;
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result-actions-cluster {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .result-summary-body {
+      font-size: 0.95rem;
+      line-height: 1.62;
+      color: var(--ink-body);
+      font-weight: 400;
+    }
+
+    .structured-analysis {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .overview-row {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .status-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .status-tag {
+      font-size: 0.73rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--surface-subtle);
+      color: var(--ink-dark);
+      border: 1px solid var(--border-crisp);
+    }
+
+    .status-tag.aberto {
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
+    }
+
+    .status-tag.previsto {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+
+    .status-tag.encerrado {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
+    .analysis-overview {
+      font-size: 0.94rem;
+      line-height: 1.6;
+      color: var(--ink-body);
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    /* Cada bloco do grid 2x2 ganha sua cor sólida de identidade funcional */
+    .analysis-metric {
+      background: #f8fafc;
+      border: 1.5px solid var(--border-crisp);
+      border-left-width: 4px;
+      border-radius: 14px;
+      padding: 13px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.08);
+    }
+
+    .analysis-metric.metric-datas {
+      border-left-color: var(--brand-cobalt);
+    }
+    .analysis-metric.metric-datas .metric-label {
+      color: var(--brand-cobalt);
+    }
+
+    .analysis-metric.metric-vagas {
+      border-left-color: var(--accent-emerald);
+    }
+    .analysis-metric.metric-vagas .metric-label {
+      color: var(--accent-emerald);
+    }
+
+    .analysis-metric.metric-requisitos {
+      border-left-color: var(--accent-amber);
+    }
+    .analysis-metric.metric-requisitos .metric-label {
+      color: var(--accent-amber);
+    }
+
+    .analysis-metric.metric-provas {
+      border-left-color: var(--accent-terracotta);
+    }
+    .analysis-metric.metric-provas .metric-label {
+      color: var(--accent-terracotta);
+    }
+
+    .metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .metric-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-value {
+      font-size: 0.87rem;
+      line-height: 1.48;
+      color: var(--ink-dark);
+      font-weight: 500;
+    }
+
+    .checklist-box {
+      background: var(--brand-cobalt-soft);
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      padding: 13px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .checklist-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .checklist-title {
+      font-size: 0.81rem;
+      font-weight: 700;
+      color: var(--brand-cobalt);
+    }
+
+    .checklist-badge {
+      font-size: 0.71rem;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid #bfdbfe;
+      color: var(--brand-cobalt-dark);
+    }
+
+    .checklist-text {
+      font-size: 0.87rem;
+      line-height: 1.52;
+      color: var(--ink-dark);
+    }
+
+    .result-skeleton {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 4px 0;
+    }
+
+    .skeleton-line {
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #eef1f6 25%, #dbeafe 50%, #eef1f6 75%);
+      background-size: 200% 100%;
+      animation: shimmerLoad 1.2s infinite linear;
+    }
+
+    @keyframes shimmerLoad {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .btn-action-copy {
+      background: #ffffff;
+      color: var(--ink-dark);
+      border: 1.5px solid var(--border-crisp);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action-copy:hover {
+      border-color: var(--brand-cobalt);
+      color: var(--brand-cobalt);
+    }
+
+    .btn-action-copy.is-copied {
+      background: var(--accent-emerald);
+      border-color: var(--accent-emerald);
+      color: #ffffff;
+    }
+
+    .btn-action-pdf {
+      background: var(--brand-cobalt);
+      color: #ffffff;
+      border: none;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      height: 36px;
+      padding: 0 16px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+      box-shadow: 0 3px 10px rgba(29, 78, 216, 0.24);
+    }
+
+    .btn-action-pdf:hover:not(:disabled) {
+      background: var(--brand-cobalt-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-action-pdf:disabled {
+      opacity: 0.7;
+    }
+
+    footer {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+      font-size: 0.76rem;
+      color: var(--ink-muted);
+      font-weight: 500;
+    }
+
+    footer span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      padding: 6px 15px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border-crisp);
+      box-shadow:
+        0 4px 10px rgba(15, 23, 42, 0.07),
+        0 10px 20px -6px rgba(15, 23, 42, 0.12);
+    }
+
+    /* Modal de Login / Cadastro Supabase */
+    .auth-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(15, 23, 42, 0.48);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .auth-modal-backdrop.is-open {
+      display: flex;
+    }
+
+    .auth-modal-card {
+      width: 100%;
+      max-width: 400px;
+      background: #ffffff;
+      border: 1.5px solid var(--border-crisp);
+      border-top: 4px solid var(--brand-cobalt);
+      border-radius: 22px;
+      padding: 22px 22px 20px;
+      box-shadow:
+        0 12px 28px rgba(15, 23, 42, 0.18),
+        0 32px 64px -12px rgba(15, 23, 42, 0.32);
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .auth-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .auth-modal-title {
+      font-family: 'Permanent Marker', cursive;
+      font-size: 1.45rem;
+      color: #090d16;
+    }
+
+    .auth-modal-sub {
+      font-size: 0.83rem;
+      color: var(--ink-body);
+      line-height: 1.45;
+    }
+
+    .auth-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .auth-field label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--ink-dark);
+    }
+
+    .auth-field input {
+      height: 40px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border-crisp);
+      padding: 0 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--ink-dark);
+      outline: none;
+    }
+
+    .auth-field input:focus {
+      border-color: var(--brand-cobalt);
+    }
+
+    .auth-feedback {
+      display: none;
+      font-size: 0.79rem;
+      font-weight: 600;
+      padding: 8px 11px;
+      border-radius: 10px;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .auth-feedback.is-ok {
+      display: block;
+      background: #ecfdf5;
+      color: #065f46;
+      border-color: #a7f3d0;
+    }
+
+    .auth-feedback.is-err {
+      display: block;
+    }
+
+    .auth-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .auth-btn-primary {
+      height: 42px;
+      border-radius: 999px;
+      border: none;
+      background: var(--brand-cobalt);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      box-shadow: 0 6px 16px rgba(29, 78, 216, 0.25);
+    }
+
+    .auth-btn-primary:hover {
+      background: var(--brand-cobalt-dark);
+    }
+
+    .auth-btn-secondary {
+      height: 38px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border-crisp);
+      background: #ffffff;
+      color: var(--ink-dark);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .auth-btn-secondary:hover {
+      border-color: var(--brand-cobalt);
+      color: var(--brand-cobalt);
+    }
+
+    /* =========================================================================
+       TEMPLATE OCULTO PARA GERAÇÃO DO PDF EDITORIAL ESTRUTURADO
+       ========================================================================= */
+    .pdf-export-staging {
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 794px;
+      background: #ffffff;
+      color: #111827;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .pdf-sheet {
+      width: 794px;
+      background: #ffffff;
+      font-family: 'Inter', sans-serif;
+      color: #111827;
+    }
+
+    .pdf-top-stripe {
+      height: 10px;
+      width: 100%;
+      background: linear-gradient(
+        90deg,
+        #1d4ed8 0%,
+        #1d4ed8 55%,
+        #0f766e 55%,
+        #0f766e 73%,
+        #b45309 73%,
+        #b45309 87%,
+        #c2410c 87%,
+        #c2410c 100%
+      );
+    }
+
+    .pdf-inner {
+      padding: 36px 42px 34px;
+    }
+
+    .pdf-brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 22px;
+    }
+
+    .pdf-brand-logo {
+      font-family: 'Permanent Marker', cursive;
+      font-size: 28px;
+      color: #1d4ed8;
+      letter-spacing: 0.02em;
+    }
+
+    .pdf-brand-meta {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .pdf-hero-banner {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-left: 6px solid #1d4ed8;
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+    }
+
+    .pdf-badges-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .pdf-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pdf-badge-status {
+      background: #dbeafe;
+      color: #1e3a8a;
+      border: 1px solid #93c5fd;
+    }
+
+    .pdf-badge-status.aberto {
+      background: #dcfce7;
+      color: #065f46;
+      border-color: #86efac;
+    }
+
+    .pdf-badge-status.previsto {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+
+    .pdf-badge-status.encerrado {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+
+    .pdf-badge-neutral {
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .pdf-doc-title {
+      font-family: 'Merriweather', Georgia, serif;
+      font-size: 21px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.28;
+      margin-bottom: 6px;
+    }
+
+    .pdf-doc-org {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1d4ed8;
+      margin-bottom: 12px;
+    }
+
+    .pdf-doc-summary {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      line-height: 1.62;
+      color: #334155;
+    }
+
+    .pdf-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .pdf-card {
+      border-radius: 14px;
+      padding: 16px 18px;
+      border: 1.5px solid #cbd5e1;
+      border-top-width: 5px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .pdf-card-datas {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      border-top-color: #1d4ed8;
+    }
+
+    .pdf-card-vagas {
+      background: #f0fdfa;
+      border-color: #99f6e4;
+      border-top-color: #0f766e;
+    }
+
+    .pdf-card-requisitos {
+      background: #fffbeb;
+      border-color: #fde68a;
+      border-top-color: #b45309;
+    }
+
+    .pdf-card-provas {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      border-top-color: #c2410c;
+    }
+
+    .pdf-card-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 3px;
+    }
+
+    .pdf-card-datas .pdf-card-kicker { color: #1d4ed8; }
+    .pdf-card-vagas .pdf-card-kicker { color: #0f766e; }
+    .pdf-card-requisitos .pdf-card-kicker { color: #b45309; }
+    .pdf-card-provas .pdf-card-kicker { color: #c2410c; }
+
+    .pdf-card-heading {
+      font-family: 'Merriweather', Georgia, serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .pdf-card-body {
+      font-family: 'Inter', sans-serif;
+      font-size: 12.2px;
+      line-height: 1.55;
+      color: #1e293b;
+    }
+
+    .pdf-checklist-panel {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 14px;
+      padding: 18px 22px;
+      border-left: 6px solid #3b82f6;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .pdf-checklist-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .pdf-checklist-title {
+      font-family: 'Merriweather', Georgia, serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #93c5fd;
+    }
+
+    .pdf-checklist-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.22);
+      color: #bfdbfe;
+      border: 1px solid rgba(147, 197, 253, 0.35);
+    }
+
+    .pdf-checklist-body {
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      line-height: 1.58;
+      color: #e2e8f0;
+    }
+
+    .pdf-footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid #cbd5e1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    /* =========================================================================
+       OTIMIZAÇÃO DEDICADA PARA MOBILE (TELAS <= 680px)
+       ========================================================================= */
+    @media (max-width: 680px) {
+      body {
+        min-height: 120dvh;
+      }
+
+      main {
+        padding: max(6.5vh, calc(env(safe-area-inset-top, 16px) + 24px)) 14px 36px;
+      }
+
+      h1 {
+        font-size: clamp(3.4rem, 15vw, 4.5rem);
+        margin-bottom: 10px;
+      }
+
+      .hero-sub {
+        font-size: 0.92rem;
+        margin-bottom: 24px;
+        padding: 0 4px;
+      }
+
+      .command-box {
+        padding: 14px 14px 13px;
+        border-radius: 20px;
+      }
+
+      .input-stage {
+        gap: 8px;
+        padding-bottom: 10px;
+      }
+
+      .btn-attach-pdf {
+        height: 36px;
+        padding: 0 11px;
+        font-size: 0.76rem;
+      }
+
+      .edital-textarea {
+        font-size: 16px;
+        height: 36px;
+        min-height: 36px;
+      }
+
+      .command-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding-top: 10px;
+      }
+
+      .pills-group {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 1px 0 3px;
+      }
+
+      .focus-pill {
+        height: 34px;
+        padding: 0 12px;
+        font-size: 0.78rem;
+      }
+
+      .send-cluster {
+        width: 100%;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .quota-pill {
+        height: 38px;
+        padding: 0 12px;
+        font-size: 0.74rem;
+      }
+
+      .btn-generate {
+        flex: 1;
+        height: 44px;
+        justify-content: center;
+        font-size: 0.92rem;
+      }
+
+      .quick-samples {
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding: 2px 2px 6px;
+        margin-top: 14px;
+      }
+
+      .quick-samples::-webkit-scrollbar {
+        display: none;
+      }
+
+      .quick-samples > span {
+        flex-shrink: 0;
+        font-size: 0.76rem;
+      }
+
+      .destination-section {
+        margin-top: 14vh;
+        margin-bottom: 8vh;
+      }
+
+      .result-dock {
+        padding: 18px 16px;
+        border-radius: 20px;
+      }
+
+      .result-dock-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .result-dock-info {
+        justify-content: space-between;
+      }
+
+      .result-dock-badge {
+        max-width: 160px;
+      }
+
+      .result-actions-cluster {
+        width: 100%;
+        flex-direction: column;
+      }
+
+      .btn-action-copy,
+      .btn-action-pdf {
+        width: 100%;
+        height: 42px;
+      }
+
+      .analysis-grid {
+        grid-template-columns: 1fr;
+        gap: 9px;
+      }
+
+      .analysis-metric {
+        padding: 12px 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="liquidCanvas"></canvas>
+  <canvas id="stageCanvas"></canvas>
+
+  <div class="ambient-backdrop"></div>
+  <div class="aurora-beam"></div>
+
+  <svg class="horizon-waves" viewBox="0 0 1440 180" preserveAspectRatio="none">
+    <path d="M0,125 C360,55 720,175 1080,95 C1260,60 1380,90 1440,108" fill="none" stroke="rgba(29,78,216,0.14)" stroke-width="1.4"/>
+    <path d="M0,152 C420,175 840,55 1440,138" fill="none" stroke="rgba(15,118,110,0.12)" stroke-width="1.2"/>
+  </svg>
+
+  <main>
+    <!-- Exibido apenas quando o usuário estiver autenticado -->
+    <div class="top-auth-bar" id="topAuthBar">
+      <button type="button" class="auth-chip" id="btnAuthTrigger">
+        <span class="auth-chip-dot" id="authStatusDot"></span>
+        <span id="authStatusLabel">Conta ativa · 25/dia</span>
+      </button>
+    </div>
+
+    <h1>Krisis.</h1>
+
+    <p class="hero-sub">
+      Extraia prazos, vagas, requisitos e matérias de qualquer edital em segundos.
+    </p>
+
+    <div class="command-box" id="commandBox">
+      <div class="inline-notice" id="inlineNotice">
+        <span id="inlineNoticeText"></span>
+        <button type="button" class="pdf-remove-btn" id="btnCloseNotice">Fechar</button>
+      </div>
+
+      <div class="pdf-attachment-bar" id="pdfAttachmentBar">
+        <div class="pdf-meta">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <span id="pdfFileNameLabel">edital.pdf</span>
+        </div>
+        <button type="button" class="pdf-remove-btn" id="btnRemovePdf">Remover</button>
+      </div>
+
+      <div class="input-stage">
+        <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;">
+        <button type="button" class="btn-attach-pdf" id="btnAttachPdf" title="Anexar ou arrastar PDF do edital">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+          </svg>
+          <span>PDF</span>
+        </button>
+
+        <textarea
+          id="editalInput"
+          class="edital-textarea"
+          rows="1"
+          placeholder="Nome do concurso, link ou texto do edital..."
+          autocomplete="off"
+          spellcheck="false"
+        ></textarea>
+
+        <button type="button" class="btn-clear-x" id="btnClearX" aria-label="Limpar entrada" title="Limpar entrada">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="command-footer">
+        <div class="pills-group" id="focusPills">
+          <button type="button" class="focus-pill active" data-pill="datas" data-value="datas de inscrição, isenção, provas e resultados">
+            <span class="pill-check">✓</span> Datas
+          </button>
+          <button type="button" class="focus-pill active" data-pill="vagas" data-value="número de vagas, cotas, remuneração e taxa de inscrição">
+            <span class="pill-check">✓</span> Vagas
+          </button>
+          <button type="button" class="focus-pill active" data-pill="requisitos" data-value="requisitos de escolaridade, idade, documentação e etapas">
+            <span class="pill-check">✓</span> Requisitos
+          </button>
+          <button type="button" class="focus-pill active" data-pill="provas" data-value="conteúdo programático, matérias cobradas, pesos e redação">
+            <span class="pill-check">✓</span> Provas
+          </button>
+        </div>
+
+        <div class="send-cluster">
+          <div class="quota-pill" id="quotaPill" title="Limite diário de análises">
+            <span class="quota-dot"></span>
+            <span id="quotaLabel">25/25 hoje</span>
+          </div>
+
+          <button type="button" class="btn-generate" id="btnGenerate">
+            <span id="btnGenerateLabel">Analisar</span>
+            <svg class="btn-paper-plane" id="btnPlaneIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 2L11 13"></path>
+              <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-samples">
+      <span>Exemplos:</span>
+      <button type="button" class="sample-chip" data-theme="cobalt" data-sample="Edital ENEM">
+        <span class="sample-dot"></span>ENEM
+      </button>
+      <button type="button" class="sample-chip" data-theme="amber" data-sample="Concurso Banco do Brasil">
+        <span class="sample-dot"></span>Banco do Brasil
+      </button>
+      <button type="button" class="sample-chip" data-theme="terracotta" data-sample="Vestibular FUVEST USP">
+        <span class="sample-dot"></span>FUVEST / USP
+      </button>
+      <button type="button" class="sample-chip" data-theme="emerald" data-sample="Concurso Caixa Econômica Federal">
+        <span class="sample-dot"></span>Caixa Econômica
+      </button>
+    </div>
+
+    <section class="destination-section" id="destinationSection">
+      <div class="result-wrapper" id="resultWrapper">
+        <div class="result-dock" id="resultDock">
+          <div class="result-dock-header">
+            <div class="result-dock-info">
+              <span class="result-dock-title" id="resultDockTitle">Decupando edital</span>
+              <span class="result-dock-badge" id="resultSubjectBadge">Edital</span>
+            </div>
+
+            <div class="result-actions-cluster" id="resultActionsCluster" style="display: none;">
+              <button type="button" class="btn-action-copy" id="btnCopyNormal">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copiar resumo</span>
+              </button>
+
+              <button type="button" class="btn-action-pdf" id="btnDownloadPdf">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Baixar PDF</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="result-summary-body" id="resultSummaryBody"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Krisis · Leitura inteligente de editais. Confira sempre o documento oficial.</span>
+  </footer>
+
+  <!-- Modal de Autenticação Supabase (abre ao clicar em Analisar quando deslogado) -->
+  <div class="auth-modal-backdrop" id="authModalBackdrop">
+    <div class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <div class="auth-modal-header">
+        <span class="auth-modal-title" id="authModalTitle">Krisis.</span>
+        <button type="button" class="pdf-remove-btn" id="btnCloseAuthModal">Fechar</button>
+      </div>
+      <p class="auth-modal-sub" id="authModalSub">
+        Entre ou crie sua conta gratuita para iniciar sua análise e liberar <strong>25 leituras por dia</strong>.
+      </p>
+
+      <div id="authFormFields">
+        <div class="auth-field" style="margin-bottom: 10px;">
+          <label for="authEmailInput">E-mail</label>
+          <input type="email" id="authEmailInput" placeholder="voce@exemplo.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label for="authPasswordInput">Senha (mín. 6 caracteres)</label>
+          <input type="password" id="authPasswordInput" placeholder="••••••••" autocomplete="current-password">
+        </div>
+      </div>
+
+      <div class="auth-feedback" id="authFeedback"></div>
+
+      <div class="auth-actions" id="authGuestActions">
+        <button type="button" class="auth-btn-primary" id="btnAuthLogin">Entrar e analisar</button>
+        <button type="button" class="auth-btn-secondary" id="btnAuthSignup">Criar conta gratuita e analisar</button>
+      </div>
+
+      <div class="auth-actions" id="authLoggedActions" style="display: none;">
+        <button type="button" class="auth-btn-secondary" id="btnAuthLogout">Sair da conta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área invisível onde o documento PDF é montado antes do download -->
+  <div class="pdf-export-staging" id="pdfExportStaging"></div>
+
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    /* =========================================================================
+       0. CLIENTE SUPABASE AUTH (LOGIN SOB DEMANDA AO ANALISAR)
+       ========================================================================= */
+    const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
+    const SUPABASE_ANON_KEY = 'SUA_CHAVE_PUBLICA_ANON_AQUI';
+
+    const isSupabaseConfigured =
+      SUPABASE_URL.startsWith('https://') &&
+      !SUPABASE_URL.includes('SEU-PROJETO') &&
+      SUPABASE_ANON_KEY.length > 20;
+
+    const supabaseClient = (window.supabase && isSupabaseConfigured)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    let currentSession = null;
+    let pendingAnalysisAfterAuth = false;
+
+    const topAuthBar = document.getElementById('topAuthBar');
+    const btnAuthTrigger = document.getElementById('btnAuthTrigger');
+    const authStatusLabel = document.getElementById('authStatusLabel');
+    const authModalBackdrop = document.getElementById('authModalBackdrop');
+    const btnCloseAuthModal = document.getElementById('btnCloseAuthModal');
+    const authModalSub = document.getElementById('authModalSub');
+    const authFormFields = document.getElementById('authFormFields');
+    const authEmailInput = document.getElementById('authEmailInput');
+    const authPasswordInput = document.getElementById('authPasswordInput');
+    const authFeedback = document.getElementById('authFeedback');
+    const authGuestActions = document.getElementById('authGuestActions');
+    const authLoggedActions = document.getElementById('authLoggedActions');
+    const btnAuthLogin = document.getElementById('btnAuthLogin');
+    const btnAuthSignup = document.getElementById('btnAuthSignup');
+    const btnAuthLogout = document.getElementById('btnAuthLogout');
+
+    function setAuthFeedback(msg, type) {
+      authFeedback.className = 'auth-feedback';
+      if (!msg) return;
+      authFeedback.textContent = msg;
+      authFeedback.classList.add(type === 'ok' ? 'is-ok' : 'is-err');
+    }
+
+    function openAuthModal(triggerFromAnalyze = false) {
+      pendingAnalysisAfterAuth = triggerFromAnalyze;
+      setAuthFeedback('', '');
+      authModalBackdrop.classList.add('is-open');
+      if (!currentSession && authEmailInput) {
+        setTimeout(() => authEmailInput.focus(), 60);
+      }
+    }
+
+    function closeAuthModal() {
+      authModalBackdrop.classList.remove('is-open');
+    }
+
+    function syncAuthUI() {
+      if (currentSession && currentSession.user) {
+        const email = currentSession.user.email || 'Conta ativa';
+        const shortUser = email.split('@')[0].slice(0, 16);
+        topAuthBar.classList.add('is-logged');
+        authStatusLabel.textContent = `${shortUser} · 25/dia`;
+        authModalSub.innerHTML = `Conectado como <strong>${escapeHTML(email)}</strong>. Seu limite diário é de <strong>25 análises por dia</strong>.`;
+        authFormFields.style.display = 'none';
+        authGuestActions.style.display = 'none';
+        authLoggedActions.style.display = 'flex';
+      } else {
+        topAuthBar.classList.remove('is-logged');
+        authModalSub.innerHTML = 'Entre ou crie sua conta gratuita para iniciar sua análise e liberar <strong>25 leituras por dia</strong>.';
+        authFormFields.style.display = 'block';
+        authGuestActions.style.display = 'flex';
+        authLoggedActions.style.display = 'none';
+      }
+
+      if (typeof ModelArmorClient !== 'undefined') {
+        ModelArmorClient.setAuthenticated(Boolean(currentSession && currentSession.user));
+        updateQuotaUI();
+      }
+    }
+
+    btnAuthTrigger.addEventListener('click', () => {
+      openAuthModal(false);
+    });
+
+    btnCloseAuthModal.addEventListener('click', () => {
+      pendingAnalysisAfterAuth = false;
+      closeAuthModal();
+    });
+
+    authModalBackdrop.addEventListener('click', (e) => {
+      if (e.target === authModalBackdrop) {
+        pendingAnalysisAfterAuth = false;
+        closeAuthModal();
+      }
+    });
+
+    function onAuthSuccessResumeIfNeeded() {
+      closeAuthModal();
+      if (pendingAnalysisAfterAuth) {
+        pendingAnalysisAfterAuth = false;
+        setTimeout(() => iniciarAnaliseEdital(true), 120);
+      }
+    }
+
+    btnAuthLogin.addEventListener('click', async () => {
+      if (!supabaseClient) {
+        setAuthFeedback('Configure SUPABASE_URL e SUPABASE_ANON_KEY no index.html.', 'err');
+        return;
+      }
+      const email = authEmailInput.value.trim();
+      const password = authPasswordInput.value;
+      if (!email || password.length < 6) {
+        setAuthFeedback('Informe um e-mail válido e senha com no mínimo 6 caracteres.', 'err');
+        return;
+      }
+      setAuthFeedback('Entrando...', 'ok');
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        setAuthFeedback(error.message || 'Não foi possível entrar.', 'err');
+        return;
+      }
+      currentSession = data.session;
+      setAuthFeedback('', '');
+      syncAuthUI();
+      onAuthSuccessResumeIfNeeded();
+    });
+
+    btnAuthSignup.addEventListener('click', async () => {
+      if (!supabaseClient) {
+        setAuthFeedback('Configure SUPABASE_URL e SUPABASE_ANON_KEY no index.html.', 'err');
+        return;
+      }
+      const email = authEmailInput.value.trim();
+      const password = authPasswordInput.value;
+      if (!email || password.length < 6) {
+        setAuthFeedback('Informe um e-mail válido e senha com no mínimo 6 caracteres.', 'err');
+        return;
+      }
+      setAuthFeedback('Criando conta...', 'ok');
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        setAuthFeedback(error.message || 'Erro ao criar conta.', 'err');
+        return;
+      }
+      if (data.session) {
+        currentSession = data.session;
+        syncAuthUI();
+        onAuthSuccessResumeIfNeeded();
+      } else {
+        setAuthFeedback('Conta criada! Verifique seu e-mail para confirmar o acesso.', 'ok');
+      }
+    });
+
+    btnAuthLogout.addEventListener('click', async () => {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      currentSession = null;
+      pendingAnalysisAfterAuth = false;
+      syncAuthUI();
+      closeAuthModal();
+    });
+
+    if (supabaseClient) {
+      supabaseClient.auth.getSession().then(({ data }) => {
+        currentSession = data.session || null;
+        syncAuthUI();
+      });
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        currentSession = session || null;
+        syncAuthUI();
+      });
+    }
+
+    /* =========================================================================
+       1. SOUND DESIGN MINIMALISTA (WEB AUDIO API)
+       ========================================================================= */
+    const SoundFX = (() => {
+      let ctx = null;
+
+      function ensureCtx() {
+        if (!ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) ctx = new AudioCtx();
+        }
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+        return ctx;
+      }
+
+      function playDustSweep(durationSec = 0.28) {
+        const audio = ensureCtx();
+        if (!audio) return;
+        const now = audio.currentTime;
+        const bufferSize = Math.floor(audio.sampleRate * durationSec);
+        const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          const env = Math.sin((i / bufferSize) * Math.PI);
+          data[i] = (Math.random() * 2 - 1) * env * 0.35;
+        }
+
+        const noise = audio.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = audio.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.Q.value = 1.6;
+        filter.frequency.setValueAtTime(2400, now);
+        filter.frequency.exponentialRampToValueAtTime(680, now + durationSec);
+
+        const gain = audio.createGain();
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audio.destination);
+        noise.start(now);
+      }
+
+      function playAirWhoosh(durationSec = 1.6) {
+        const audio = ensureCtx();
+        if (!audio) return;
+        const now = audio.currentTime;
+        const bufferSize = Math.floor(audio.sampleRate * durationSec);
+        const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = audio.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = audio.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.Q.value = 1.2;
+        filter.frequency.setValueAtTime(180, now);
+        filter.frequency.linearRampToValueAtTime(540, now + durationSec * 0.45);
+        filter.frequency.exponentialRampToValueAtTime(140, now + durationSec);
+
+        const gain = audio.createGain();
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.04, now + durationSec * 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audio.destination);
+        noise.start(now);
+      }
+
+      return {
+        playDustSweep,
+        playAirWhoosh
+      };
+    })();
+
+    /* =========================================================================
+       2. CONFIGURAÇÃO DE CANVAS
+       ========================================================================= */
+    const isFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const liquidCanvas = document.getElementById('liquidCanvas');
+    const liquidCtx = liquidCanvas.getContext('2d');
+    const stageCanvas = document.getElementById('stageCanvas');
+    const stageCtx = stageCanvas.getContext('2d');
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+
+    function resizeCanvases() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+      [liquidCanvas, stageCanvas].forEach(c => {
+        c.width = W * dpr;
+        c.height = H * dpr;
+        c.style.width = W + 'px';
+        c.style.height = H + 'px';
+        const ctx = c.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      });
+    }
+    resizeCanvases();
+    window.addEventListener('resize', resizeCanvases);
+
+    /* =========================================================================
+       3. CURSOR (DESKTOP) & ONDAS DO BACKGROUND
+       ========================================================================= */
+    const customCursor = {
+      x: W / 2,
+      y: H / 2,
+      targetX: W / 2,
+      targetY: H / 2,
+      lastTargetX: W / 2,
+      lastTargetY: H / 2,
+      smoothDx: 0,
+      smoothDy: 0,
+      angle: 0,
+      scale: 1,
+      isHovering: false,
+      visible: false,
+      trail: []
+    };
+
+    if (isFinePointer) {
+      window.addEventListener('mousemove', (e) => {
+        if (!customCursor.visible) {
+          customCursor.x = e.clientX;
+          customCursor.y = e.clientY;
+          customCursor.lastTargetX = e.clientX;
+          customCursor.lastTargetY = e.clientY;
+        }
+        customCursor.targetX = e.clientX;
+        customCursor.targetY = e.clientY;
+        customCursor.visible = true;
+        customCursor.isHovering = Boolean(e.target.closest('button, textarea, input, a'));
+      }, { passive: true });
+
+      document.addEventListener('mouseleave', () => {
+        customCursor.visible = false;
+      });
+    }
+
+    const liquidRipples = [];
+    function spawnSubtleRipple(x, y) {
+      if (liquidRipples.length > 4) liquidRipples.shift();
+      const scaleRand = 0.72 + Math.random() * 0.55;
+      liquidRipples.push({
+        x,
+        y,
+        radius: 8 + Math.random() * 6,
+        maxRadius: Math.min(W, H) * (0.20 + Math.random() * 0.12) * scaleRand,
+        speed: 2.3 + Math.random() * 1.1,
+        alpha: 0.22 + Math.random() * 0.12,
+        rings: Math.random() > 0.5 ? 2 : 1,
+        ringGap: 14 + Math.random() * 10,
+        wobbleAmp: 1.6 + Math.random() * 2.8,
+        wobbleFreq: Math.floor(3 + Math.random() * 4),
+        phase: Math.random() * Math.PI * 2,
+        stretchX: 0.94 + Math.random() * 0.18,
+        stretchY: 0.94 + Math.random() * 0.18,
+        rotation: Math.random() * Math.PI
+      });
+    }
+
+    window.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('.command-box, .result-dock, .sample-chip, .auth-modal-card')) {
+        spawnSubtleRipple(e.clientX, e.clientY);
+      }
+    }, { passive: true });
+
+    /* =========================================================================
+       4. EXTRATOR DE PDF LOCAL (PDF.JS) + TEXTAREA 1 LINHA EXPANSÍVEL
+       ========================================================================= */
+    const commandBox = document.getElementById('commandBox');
+    const inlineNotice = document.getElementById('inlineNotice');
+    const inlineNoticeText = document.getElementById('inlineNoticeText');
+    const btnCloseNotice = document.getElementById('btnCloseNotice');
+    const editalInput = document.getElementById('editalInput');
+    const btnClearX = document.getElementById('btnClearX');
+    const btnAttachPdf = document.getElementById('btnAttachPdf');
+    const pdfFileInput = document.getElementById('pdfFileInput');
+    const pdfAttachmentBar = document.getElementById('pdfAttachmentBar');
+    const pdfFileNameLabel = document.getElementById('pdfFileNameLabel');
+    const btnRemovePdf = document.getElementById('btnRemovePdf');
+    const btnGenerate = document.getElementById('btnGenerate');
+    const btnPlaneIcon = document.getElementById('btnPlaneIcon');
+
+    let attachedPdfData = null;
+    const dustParticles = [];
+    let isClearingText = false;
+    let clearAnimStart = 0;
+    let clearAnimDuration = 280;
+
+    function showNotice(msg) {
+      inlineNoticeText.textContent = msg;
+      inlineNotice.classList.add('is-visible');
+    }
+
+    function hideNotice() {
+      inlineNotice.classList.remove('is-visible');
+    }
+
+    btnCloseNotice.addEventListener('click', hideNotice);
+
+    function autoResizeTextarea() {
+      if (!editalInput.value) {
+        editalInput.style.height = '36px';
+        editalInput.style.overflowY = 'hidden';
+        return;
+      }
+      editalInput.style.height = '36px';
+      const nextHeight = Math.min(132, Math.max(36, editalInput.scrollHeight));
+      editalInput.style.height = nextHeight + 'px';
+      editalInput.style.overflowY = editalInput.scrollHeight > 132 ? 'auto' : 'hidden';
+    }
+
+    function syncClearButton() {
+      if ((editalInput.value.length > 0 || attachedPdfData) && !isClearingText) {
+        btnClearX.classList.add('is-active');
+      } else {
+        btnClearX.classList.remove('is-active');
+      }
+    }
+
+    function clearPdfAttachment() {
+      attachedPdfData = null;
+      pdfFileInput.value = '';
+      pdfAttachmentBar.classList.remove('is-visible');
+      syncClearButton();
+    }
+
+    btnRemovePdf.addEventListener('click', clearPdfAttachment);
+    btnAttachPdf.addEventListener('click', () => {
+      hideNotice();
+      pdfFileInput.click();
+    });
+
+    async function extractTextFromPdfFile(file) {
+      hideNotice();
+      if (!file || file.type !== 'application/pdf') {
+        showNotice('Selecione um arquivo PDF válido.');
+        return;
+      }
+
+      if (!window.pdfjsLib) {
+        showNotice('Leitor de PDF carregando. Tente novamente em 2 segundos.');
+        return;
+      }
+
+      pdfAttachmentBar.classList.add('is-visible');
+      pdfFileNameLabel.textContent = `Lendo "${file.name}"...`;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdf.numPages;
+        const maxPagesToRead = Math.min(totalPages, 35);
+
+        let fullText = '';
+        for (let pageNum = 1; pageNum <= maxPagesToRead; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const content = await page.getTextContent();
+          const pageStrings = content.items.map(item => item.str);
+          fullText += `\n[Pág. ${pageNum}] ` + pageStrings.join(' ');
+          if (fullText.length >= 26000) break;
+        }
+
+        const cleanPdfText = fullText.replace(/\s+/g, ' ').trim().slice(0, 26000);
+        if (cleanPdfText.length < 40) {
+          clearPdfAttachment();
+          showNotice('PDF escaneado sem texto selecionável. Cole o link ou trecho do edital.');
+          return;
+        }
+
+        attachedPdfData = {
+          name: file.name,
+          pagesCount: totalPages,
+          extractedText: cleanPdfText
+        };
+
+        pdfFileNameLabel.textContent = `${file.name} (${totalPages} págs.)`;
+        syncClearButton();
+      } catch (_) {
+        clearPdfAttachment();
+        showNotice('Não foi possível ler este PDF. Verifique se não possui senha.');
+      }
+    }
+
+    pdfFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        extractTextFromPdfFile(e.target.files[0]);
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      commandBox.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        commandBox.classList.add('is-dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      commandBox.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        commandBox.classList.remove('is-dragover');
+      });
+    });
+
+    commandBox.addEventListener('drop', (e) => {
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files[0]) {
+        extractTextFromPdfFile(files[0]);
+      }
+    });
+
+    btnClearX.addEventListener('click', () => {
+      if (isClearingText) return;
+      hideNotice();
+      const text = editalInput.value;
+      clearPdfAttachment();
+
+      if (!text) {
+        syncClearButton();
+        return;
+      }
+
+      const inputRect = editalInput.getBoundingClientRect();
+      clearAnimDuration = 280;
+      clearAnimStart = performance.now();
+      isClearingText = true;
+      SoundFX.playDustSweep(0.28);
+
+      btnClearX.classList.remove('is-active');
+      for (let i = 0; i < 48; i++) {
+        const t = i / 48;
+        dustParticles.push({
+          x: inputRect.left + inputRect.width * 0.7 * (1 - t) + (Math.random() - 0.5) * 18,
+          y: inputRect.top + 18 + (Math.random() - 0.5) * 12,
+          vx: -Math.random() * 1.5 - 0.4,
+          vy: (Math.random() - 0.65) * 1.3,
+          size: Math.random() * 2 + 1,
+          color: Math.random() > 0.45 ? '#2563eb' : '#0f172a',
+          bornAt: clearAnimStart + t * 180,
+          life: 1,
+          decay: 0.025
+        });
+      }
+
+      setTimeout(() => {
+        editalInput.value = '';
+        editalInput.style.clipPath = 'inset(0 0% 0 0)';
+        autoResizeTextarea();
+        isClearingText = false;
+        editalInput.focus();
+      }, clearAnimDuration);
+    });
+
+    editalInput.addEventListener('input', () => {
+      hideNotice();
+      autoResizeTextarea();
+      syncClearButton();
+    });
+
+    editalInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        iniciarAnaliseEdital();
+      }
+    });
+
+    /* =========================================================================
+       5. MODEL ARMOR CLIENT, COTA & COMUNICAÇÃO COM /api/analyze
+       ========================================================================= */
+    const resultWrapper = document.getElementById('resultWrapper');
+    const resultDock = document.getElementById('resultDock');
+    const resultDockTitle = document.getElementById('resultDockTitle');
+    const destinationSection = document.getElementById('destinationSection');
+    const resultSubjectBadge = document.getElementById('resultSubjectBadge');
+    const resultSummaryBody = document.getElementById('resultSummaryBody');
+    const resultActionsCluster = document.getElementById('resultActionsCluster');
+    const btnCopyNormal = document.getElementById('btnCopyNormal');
+    const btnDownloadPdf = document.getElementById('btnDownloadPdf');
+    const quotaPill = document.getElementById('quotaPill');
+    const quotaLabel = document.getElementById('quotaLabel');
+    const btnGenerateLabel = document.getElementById('btnGenerateLabel');
+
+    function formatQuotaCountdown(totalSec) {
+      const sec = Math.max(0, Math.floor(totalSec));
+      if (sec >= 3600) {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        return `${h}h ${String(m).padStart(2, '0')}m`;
+      }
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    const ModelArmorClient = (() => {
+      const MAX_TEXT_LEN = 26000;
+      const MIN_TEXT_LEN = 3;
+      const requestTimestamps = [];
+      const dailyTimestamps = [];
+      const MAX_REQ_PER_MIN = 6;
+      let isUserLoggedIn = false;
+      const MINUTE_MS = 60 * 1000;
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      let serverOverrideUntil
