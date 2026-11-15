@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // CORS básico
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Client-Integrity');
@@ -104,7 +103,7 @@ export default async function handler(req, res) {
           }
         }
       }
-    } catch (authErr) {
+    } catch (_) {
       return res.status(500).json({
         ok: false,
         code: 'AUTH_CHECK_FAILED',
@@ -154,16 +153,49 @@ REGRAS OBRIGATÓRIAS:
     ? `Analise o conteúdo extraído do PDF deste edital e estruture o JSON:\n\n${cleanTarget}`
     : `Analise o seguinte edital / seleção e estruture o JSON:\n\n${cleanTarget}`;
 
-  // Modelos ativos na Groq com fallback automático
-  const GROQ_MODELS = [
-    'llama-3.3-70b-versatile',
-    'meta-llama/llama-4-scout-17b-16e-instruct',
-    'qwen/qwen3-32b'
-  ];
+  // 4. Descobre automaticamente os modelos disponíveis na sua conta Groq
+  let candidateModels = [];
+  try {
+    const modelsResp = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { Authorization: `Bearer ${GROQ_API_KEY}` }
+    });
+    if (modelsResp.ok) {
+      const modelsJson = await modelsResp.json();
+      const allIds = (modelsJson?.data || [])
+        .map(m => m.id)
+        .filter(id =>
+          typeof id === 'string' &&
+          !/(whisper|guard|tts|audio|speech|embed|vision-preview)/i.test(id)
+        );
 
-  let lastErrorMsg = 'Falha ao consultar a IA.';
+      // Ordena priorizando Llama/Qwen/Gemma/GPT de texto geral
+      allIds.sort((a, b) => {
+        const score = (id) => {
+          if (/70b|32b|120b|versatile|instruct/i.test(id)) return 1;
+          if (/llama|qwen|gemma|mistral|deepseek|gpt/i.test(id)) return 2;
+          return 3;
+        };
+        return score(a) - score(b);
+      });
 
-  for (const model of GROQ_MODELS) {
+      candidateModels = allIds.slice(0, 6);
+    }
+  } catch (_) {
+    // Segue para lista de contingência se /models falhar
+  }
+
+  if (candidateModels.length === 0) {
+    candidateModels = [
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'openai/gpt-oss-120b',
+      'openai/gpt-oss-20b'
+    ];
+  }
+
+  let lastErrorMsg = 'Nenhum modelo disponível na sua conta Groq.';
+
+  for (const model of candidateModels) {
     try {
       const groqResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -238,7 +270,7 @@ REGRAS OBRIGATÓRIAS:
   return res.status(502).json({
     ok: false,
     code: 'GROQ_UPSTREAM_ERROR',
-    message: lastErrorMsg,
+    message: `${lastErrorMsg} | Modelos testados: ${candidateModels.join(', ')}`,
     quota: quotaInfo
   });
 }
