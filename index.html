@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Merriweather:wght@700;900&family=Permanent+Marker&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -1426,287 +1426,6 @@
       color: var(--brand-cobalt);
     }
 
-    /* =========================================================================
-       TEMPLATE PARA GERAÇÃO DO PDF EDITORIAL COMPLETO E MULTIPÁGINA
-       ========================================================================= */
-    .pdf-export-staging {
-      position: fixed;
-      left: -12000px;
-      top: 0;
-      width: 720px;
-      background: #ffffff;
-      color: #111827;
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    .pdf-sheet {
-      width: 720px;
-      background: #ffffff;
-      font-family: 'Inter', sans-serif;
-      color: #111827;
-    }
-
-    .pdf-top-stripe {
-      height: 8px;
-      width: 100%;
-      background: linear-gradient(
-        90deg,
-        #1d4ed8 0%,
-        #1d4ed8 55%,
-        #0f766e 55%,
-        #0f766e 73%,
-        #b45309 73%,
-        #b45309 87%,
-        #c2410c 87%,
-        #c2410c 100%
-      );
-      margin-bottom: 18px;
-    }
-
-    .pdf-brand-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 14px;
-      border-bottom: 2px solid #e2e8f0;
-      margin-bottom: 18px;
-    }
-
-    .pdf-brand-logo {
-      font-family: 'Permanent Marker', cursive;
-      font-size: 26px;
-      color: #1d4ed8;
-      letter-spacing: 0.02em;
-    }
-
-    .pdf-brand-meta {
-      text-align: right;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
-      color: #475569;
-      line-height: 1.5;
-    }
-
-    .pdf-hero-banner {
-      background: #f8fafc;
-      border: 1.5px solid #cbd5e1;
-      border-left: 6px solid #1d4ed8;
-      border-radius: 12px;
-      padding: 18px 20px;
-      margin-bottom: 18px;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-
-    .pdf-badges-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 9px;
-    }
-
-    .pdf-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      font-weight: 600;
-      padding: 3px 9px;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .pdf-badge-status {
-      background: #dbeafe;
-      color: #1e3a8a;
-      border: 1px solid #93c5fd;
-    }
-
-    .pdf-badge-status.aberto {
-      background: #dcfce7;
-      color: #065f46;
-      border: 1px solid #86efac;
-    }
-
-    .pdf-badge-status.previsto {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fcd34d;
-    }
-
-    .pdf-badge-status.encerrado {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fca5a5;
-    }
-
-    .pdf-badge-neutral {
-      background: #ffffff;
-      color: #334155;
-      border: 1px solid #cbd5e1;
-    }
-
-    .pdf-doc-title {
-      font-family: 'Merriweather', Georgia, serif;
-      font-size: 19px;
-      font-weight: 900;
-      color: #0f172a;
-      line-height: 1.3;
-      margin-bottom: 5px;
-    }
-
-    .pdf-doc-org {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11.5px;
-      font-weight: 600;
-      color: #1d4ed8;
-      margin-bottom: 10px;
-    }
-
-    .pdf-doc-summary {
-      font-family: 'Inter', sans-serif;
-      font-size: 12.5px;
-      line-height: 1.62;
-      color: #1e293b;
-    }
-
-    /* Fluxo vertical em coluna única no PDF evita cortes horizontais e preserva 100% do texto */
-    .pdf-sections-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      margin-bottom: 16px;
-    }
-
-    .pdf-card {
-      border-radius: 12px;
-      padding: 15px 18px;
-      border: 1.5px solid #cbd5e1;
-      border-left-width: 6px;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-
-    .pdf-card-datas {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      border-left-color: #1d4ed8;
-    }
-
-    .pdf-card-vagas {
-      background: #f0fdfa;
-      border-color: #99f6e4;
-      border-left-color: #0f766e;
-    }
-
-    .pdf-card-requisitos {
-      background: #fffbeb;
-      border-color: #fde68a;
-      border-left-color: #b45309;
-    }
-
-    .pdf-card-provas {
-      background: #fff7ed;
-      border-color: #fed7aa;
-      border-left-color: #c2410c;
-    }
-
-    .pdf-card-armadilhas {
-      background: #fef2f2;
-      border-color: #fecaca;
-      border-left-color: #dc2626;
-    }
-
-    .pdf-card-kicker {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9.5px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 2px;
-    }
-
-    .pdf-card-datas .pdf-card-kicker { color: #1d4ed8; }
-    .pdf-card-vagas .pdf-card-kicker { color: #0f766e; }
-    .pdf-card-requisitos .pdf-card-kicker { color: #b45309; }
-    .pdf-card-provas .pdf-card-kicker { color: #c2410c; }
-    .pdf-card-armadilhas .pdf-card-kicker { color: #dc2626; }
-
-    .pdf-card-heading {
-      font-family: 'Merriweather', Georgia, serif;
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 8px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.10);
-    }
-
-    .pdf-card-body {
-      font-family: 'Inter', sans-serif;
-      font-size: 12px;
-      line-height: 1.58;
-      color: #0f172a;
-    }
-
-    .pdf-line-row {
-      margin-bottom: 4px;
-    }
-
-    .pdf-checklist-panel {
-      background: #0f172a;
-      color: #f8fafc;
-      border-radius: 12px;
-      padding: 16px 20px;
-      border-left: 6px solid #3b82f6;
-      margin-bottom: 16px;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-
-    .pdf-checklist-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .pdf-checklist-title {
-      font-family: 'Merriweather', Georgia, serif;
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #93c5fd;
-    }
-
-    .pdf-checklist-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9.5px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(59, 130, 246, 0.22);
-      color: #bfdbfe;
-      border: 1px solid rgba(147, 197, 253, 0.35);
-    }
-
-    .pdf-checklist-body {
-      font-family: 'Inter', sans-serif;
-      font-size: 12px;
-      line-height: 1.58;
-      color: #e2e8f0;
-    }
-
-    .pdf-footer-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 10px;
-      border-top: 1px solid #cbd5e1;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9.5px;
-      color: #64748b;
-    }
-
     @media (max-width: 680px) {
       body {
         min-height: 120dvh;
@@ -2019,7 +1738,7 @@
 
     <div class="quick-samples">
       <span>Exemplos:</span>
-      <button type="button" class="sample-chip" data-theme="cobalt" data-sample="Edital ENEM">
+      <button type="button" class="sample-chip" data-theme="cobalt" data-sample="Edital ENEM 2026">
         <span class="sample-dot"></span>ENEM
       </button>
       <button type="button" class="sample-chip" data-theme="amber" data-sample="Concurso Banco do Brasil">
@@ -2106,9 +1825,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Área de montagem para exportação do PDF completo -->
-  <div class="pdf-export-staging" id="pdfExportStaging"></div>
 
   <script>
     if (window.pdfjsLib) {
@@ -3200,7 +2916,7 @@
 
     async function fetchEditalAnalysis(cleanContent, focuses, isPdf) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000);
+      const timeoutId = setTimeout(() => controller.abort(), 38000);
 
       try {
         const reqHeaders = {
@@ -3257,93 +2973,22 @@
     }
 
     /* =========================================================================
-       6. EXPORTAÇÃO DO PDF COMPLETO E MULTIPÁGINA SEM CORTES
+       6. GERADOR DE PDF VETORIAL NATIVO (jsPDF) — ZERO CORTES / 100% NÍTIDO
        ========================================================================= */
-    function buildEditorialPdfHtml(data) {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('pt-BR');
-      const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const statusRaw = String(data.status || 'Consultar Cronograma').trim();
-      const statusClass = getStatusClass(statusRaw);
-
-      return `
-        <div class="pdf-sheet" id="pdfDocumentRoot">
-          <div class="pdf-top-stripe"></div>
-
-          <div class="pdf-brand-header">
-            <div class="pdf-brand-logo">Krisis.</div>
-            <div class="pdf-brand-meta">
-              <div>DOSSIÊ TÉCNICO COMPLETO DE EDITAL</div>
-              <div>Gerado em ${escapeHTML(dateStr)} às ${escapeHTML(timeStr)}</div>
-            </div>
-          </div>
-
-          <div class="pdf-hero-banner">
-            <div class="pdf-badges-row">
-              <span class="pdf-badge pdf-badge-status ${statusClass}">${escapeHTML(statusRaw)}</span>
-              ${data.escolaridade ? `<span class="pdf-badge pdf-badge-neutral">${escapeHTML(data.escolaridade)}</span>` : ''}
-            </div>
-            <div class="pdf-doc-title">${escapeHTML(data.titulo || 'Resumo Executivo do Edital')}</div>
-            <div class="pdf-doc-org">${escapeHTML(data.bancaOrgao || 'Guia Estruturado do Candidato')}</div>
-            <div class="pdf-doc-summary">${formatRichLinesHTML(data.resumo || '', 'pdf-line-row')}</div>
-          </div>
-
-          <div class="pdf-sections-stack">
-            <div class="pdf-card pdf-card-datas">
-              <div class="pdf-card-kicker">01 · Cronograma Completo</div>
-              <div class="pdf-card-heading">Datas & Prazos</div>
-              <div class="pdf-card-body">${formatRichLinesHTML(data.datas || 'Consulte o cronograma oficial.', 'pdf-line-row')}</div>
-            </div>
-
-            <div class="pdf-card pdf-card-vagas">
-              <div class="pdf-card-kicker">02 · Quadro de Oportunidades</div>
-              <div class="pdf-card-heading">Vagas, Salário & Taxa de Inscrição</div>
-              <div class="pdf-card-body">${formatRichLinesHTML(data.vagas || 'Consulte o quadro de vagas no edital.', 'pdf-line-row')}</div>
-            </div>
-
-            <div class="pdf-card pdf-card-requisitos">
-              <div class="pdf-card-kicker">03 · Habilitação & Etapas</div>
-              <div class="pdf-card-heading">Requisitos & Fases da Seleção</div>
-              <div class="pdf-card-body">${formatRichLinesHTML(data.requisitos || 'Verifique os requisitos básicos do cargo.', 'pdf-line-row')}</div>
-            </div>
-
-            <div class="pdf-card pdf-card-provas">
-              <div class="pdf-card-kicker">04 · Estrutura de Avaliação</div>
-              <div class="pdf-card-heading">Provas, Pesos & Conteúdo Programático</div>
-              <div class="pdf-card-body">${formatRichLinesHTML(data.provas || 'Consulte o conteúdo programático.', 'pdf-line-row')}</div>
-            </div>
-
-            ${data.armadilhas ? `
-              <div class="pdf-card pdf-card-armadilhas">
-                <div class="pdf-card-kicker">05 · Atenção Eliminatória</div>
-                <div class="pdf-card-heading">Pontos Críticos & Armadilhas do Edital</div>
-                <div class="pdf-card-body">${formatRichLinesHTML(data.armadilhas, 'pdf-line-row')}</div>
-              </div>
-            ` : ''}
-          </div>
-
-          ${data.checklist ? `
-            <div class="pdf-checklist-panel">
-              <div class="pdf-checklist-header">
-                <div class="pdf-checklist-title">Checklist de Ação Imediata</div>
-                <div class="pdf-checklist-tag">PRÓXIMOS PASSOS</div>
-              </div>
-              <div class="pdf-checklist-body">${formatRichLinesHTML(data.checklist, 'pdf-line-row')}</div>
-            </div>
-          ` : ''}
-
-          <div class="pdf-footer-bar">
-            <span>KRISIS · DISCERNIMENTO SOBRE QUALQUER EDITAL</span>
-            <span>CONFERIR SEMPRE O DOCUMENTO OFICIAL DA BANCA</span>
-          </div>
-        </div>
-      `;
+    function normalizePdfText(str) {
+      return String(str || '')
+        .replace(/•/g, '-')
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/[—–]/g, '-')
+        .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, ' ')
+        .trim();
     }
 
-    async function downloadStructuredPdf() {
+    function downloadStructuredPdf() {
       if (!currentAnalysisData) return;
-      if (!window.html2pdf) {
-        showNotice('Gerador de PDF ainda carregando. Tente novamente em 2 segundos.');
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        showNotice('Biblioteca PDF ainda carregando. Tente novamente em 2 segundos.');
         return;
       }
 
@@ -3352,42 +2997,238 @@
       btnDownloadPdf.disabled = true;
       span.textContent = 'Gerando PDF...';
 
-      const staging = document.getElementById('pdfExportStaging');
-      staging.innerHTML = buildEditorialPdfHtml(currentAnalysisData);
-      const element = document.getElementById('pdfDocumentRoot');
-
-      const safeFilename = (currentAnalysisData.titulo || 'edital-krisis')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .slice(0, 48) || 'edital-krisis';
-
       try {
-        if (document.fonts && document.fonts.ready) {
-          await document.fonts.ready;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = doc.internal.pageSize.getWidth();   // 210
+        const pageH = doc.internal.pageSize.getHeight();  // 297
+        const marginX = 14;
+        const contentW = pageW - marginX * 2;
+        const bottomLimit = pageH - 18;
+        let y = 14;
+
+        const now = new Date();
+        const stamp = `${now.toLocaleDateString('pt-BR')} as ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+        function drawPageChrome(isFirst) {
+          // Faixa superior tricolor
+          doc.setFillColor(29, 78, 216);
+          doc.rect(0, 0, pageW * 0.6, 3, 'F');
+          doc.setFillColor(15, 118, 110);
+          doc.rect(pageW * 0.6, 0, pageW * 0.2, 3, 'F');
+          doc.setFillColor(194, 65, 12);
+          doc.rect(pageW * 0.8, 0, pageW * 0.2, 3, 'F');
+
+          if (isFirst) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.setTextColor(29, 78, 216);
+            doc.text('Krisis.', marginX, 14);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text('DOSSIE TECNICO DE EDITAL', pageW - marginX, 11, { align: 'right' });
+            doc.text(`Gerado em ${stamp}`, pageW - marginX, 15.5, { align: 'right' });
+
+            doc.setDrawColor(203, 213, 225);
+            doc.setLineWidth(0.4);
+            doc.line(marginX, 18.5, pageW - marginX, 18.5);
+            y = 24;
+          } else {
+            y = 14;
+          }
         }
-        await html2pdf()
-          .set({
-            margin: [10, 10, 12, 10],
-            filename: `${safeFilename}-krisis.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-              scale: 2,
-              useCORS: true,
-              logging: false,
-              windowWidth: 740
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
-          })
-          .from(element)
-          .save();
+
+        function ensureSpace(neededHeight) {
+          if (y + neededHeight > bottomLimit) {
+            doc.addPage();
+            drawPageChrome(false);
+          }
+        }
+
+        drawPageChrome(true);
+
+        // Bloco Hero (Título, Banca, Status, Resumo Executivo)
+        const titleLines = doc.splitTextToSize(normalizePdfText(currentAnalysisData.titulo || 'Resumo Executivo do Edital'), contentW - 10);
+        const orgText = normalizePdfText(`${currentAnalysisData.bancaOrgao || ''}  |  Status: ${currentAnalysisData.status || ''}${currentAnalysisData.escolaridade ? '  |  ' + currentAnalysisData.escolaridade : ''}`);
+        const orgLines = doc.splitTextToSize(orgText, contentW - 10);
+        const summaryLines = doc.splitTextToSize(normalizePdfText(currentAnalysisData.resumo || ''), contentW - 10);
+
+        const heroH = 8 + titleLines.length * 6.2 + orgLines.length * 4.5 + summaryLines.length * 4.8 + 6;
+        ensureSpace(heroH);
+
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(203, 213, 225);
+        doc.roundedRect(marginX, y, contentW, heroH, 3, 3, 'FD');
+
+        doc.setFillColor(29, 78, 216);
+        doc.rect(marginX, y, 2.5, heroH, 'F');
+
+        let curY = y + 6.5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text(titleLines, marginX + 6, curY);
+        curY += titleLines.length * 6.2 + 1;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.8);
+        doc.setTextColor(29, 78, 216);
+        doc.text(orgLines, marginX + 6, curY);
+        curY += orgLines.length * 4.5 + 2;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.8);
+        doc.setTextColor(51, 65, 85);
+        doc.text(summaryLines, marginX + 6, curY);
+
+        y += heroH + 6;
+
+        // Função para desenhar cada seção colorida com quebra de página segura
+        function drawSectionBlock(kicker, heading, rawBody, theme) {
+          const cleanBody = normalizePdfText(rawBody);
+          if (!cleanBody) return;
+
+          const bodyLines = doc.splitTextToSize(cleanBody, contentW - 12);
+          const headerH = 13;
+          const lineH = 4.7;
+          const totalH = headerH + bodyLines.length * lineH + 5;
+
+          // Se couber inteiro na página atual, desenha caixa única; se for muito longo, divide em blocos por página
+          if (totalH <= (bottomLimit - 16)) {
+            ensureSpace(totalH);
+            doc.setFillColor(...theme.bg);
+            doc.setDrawColor(...theme.border);
+            doc.roundedRect(marginX, y, contentW, totalH, 2.5, 2.5, 'FD');
+
+            doc.setFillColor(...theme.accent);
+            doc.rect(marginX, y, 2.5, totalH, 'F');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7.8);
+            doc.setTextColor(...theme.accent);
+            doc.text(kicker.toUpperCase(), marginX + 6, y + 5.5);
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(...theme.titleColor);
+            doc.text(heading, marginX + 6, y + 10.5);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            doc.setTextColor(...theme.textColor);
+            doc.text(bodyLines, marginX + 6, y + 16);
+
+            y += totalH + 5;
+          } else {
+            // Bloco longo: imprime cabeçalho e fatia linhas conforme espaço da página
+            ensureSpace(24);
+            doc.setFillColor(...theme.accent);
+            doc.rect(marginX, y, 2.5, 11, 'F');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7.8);
+            doc.setTextColor(...theme.accent);
+            doc.text(kicker.toUpperCase(), marginX + 5, y + 4.5);
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(15, 23, 42);
+            doc.text(heading, marginX + 5, y + 9.8);
+            y += 14;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            doc.setTextColor(30, 41, 59);
+            for (const line of bodyLines) {
+              ensureSpace(6);
+              doc.text(line, marginX + 5, y);
+              y += lineH;
+            }
+            y += 5;
+          }
+        }
+
+        drawSectionBlock('01 - Cronograma', 'Datas & Prazos', currentAnalysisData.datas, {
+          bg: [239, 246, 255],
+          border: [191, 219, 254],
+          accent: [29, 78, 216],
+          titleColor: [15, 23, 42],
+          textColor: [30, 41, 59]
+        });
+
+        drawSectionBlock('02 - Oportunidades', 'Vagas, Salario & Taxa de Inscricao', currentAnalysisData.vagas, {
+          bg: [240, 253, 250],
+          border: [153, 246, 228],
+          accent: [15, 118, 110],
+          titleColor: [15, 23, 42],
+          textColor: [30, 41, 59]
+        });
+
+        drawSectionBlock('03 - Habilitacao', 'Requisitos & Etapas da Selecao', currentAnalysisData.requisitos, {
+          bg: [255, 251, 235],
+          border: [253, 230, 138],
+          accent: [180, 83, 9],
+          titleColor: [15, 23, 42],
+          textColor: [30, 41, 59]
+        });
+
+        drawSectionBlock('04 - Avaliacao', 'Provas, Pesos & Conteudo Programatico', currentAnalysisData.provas, {
+          bg: [255, 247, 237],
+          border: [254, 215, 170],
+          accent: [194, 65, 12],
+          titleColor: [15, 23, 42],
+          textColor: [30, 41, 59]
+        });
+
+        if (currentAnalysisData.armadilhas) {
+          drawSectionBlock('05 - Atencao Eliminatoria', 'Pontos Criticos & Armadilhas do Edital', currentAnalysisData.armadilhas, {
+            bg: [254, 242, 242],
+            border: [254, 202, 202],
+            accent: [220, 38, 38],
+            titleColor: [127, 29, 29],
+            textColor: [69, 10, 10]
+          });
+        }
+
+        if (currentAnalysisData.checklist) {
+          drawSectionBlock('06 - Proximos Passos', 'Checklist de Acao Imediata', currentAnalysisData.checklist, {
+            bg: [15, 23, 42],
+            border: [30, 41, 59],
+            accent: [59, 130, 246],
+            titleColor: [147, 197, 253],
+            textColor: [241, 245, 249]
+          });
+        }
+
+        // Rodapé numerado em todas as páginas
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let p = 1; p <= pageCount; p++) {
+          doc.setPage(p);
+          doc.setDrawColor(203, 213, 225);
+          doc.setLineWidth(0.3);
+          doc.line(marginX, pageH - 12, pageW - marginX, pageH - 12);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 116, 139);
+          doc.text('Krisis - Leitura inteligente de editais. Confira sempre o documento oficial.', marginX, pageH - 7.5);
+          doc.text(`Pagina ${p} de ${pageCount}`, pageW - marginX, pageH - 7.5, { align: 'right' });
+        }
+
+        const safeFilename = (currentAnalysisData.titulo || 'edital-krisis')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 48) || 'edital-krisis';
+
+        doc.save(`${safeFilename}-krisis.pdf`);
       } catch (_) {
         showNotice('Não foi possível gerar o PDF agora. Tente novamente.');
       } finally {
-        staging.innerHTML = '';
         btnDownloadPdf.disabled = false;
         span.textContent = originalLabel;
       }
@@ -3510,7 +3351,7 @@
       currentGeneratedSummary = '';
       currentAnalysisData = null;
       resultSubjectBadge.textContent = validation.displayTitle;
-      resultDockTitle.textContent = 'Decupando edital...';
+      resultDockTitle.textContent = 'Pesquisando e decupando edital...';
       resultActionsCluster.style.display = 'none';
       resultSummaryBody.innerHTML = `
         <div class="result-skeleton">
