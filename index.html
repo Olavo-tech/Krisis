@@ -13,18 +13,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      /* Teoria das Cores: Base Neutra Clara (60%), Cor Persistente Azul Cobalto (30%) e Acentos Sólidos Funcionais (10%) */
       --bg-canvas: #eef1f5;
       --surface-card: #ffffff;
       --surface-subtle: #e5e9f0;
       --border-crisp: #cbd5e1;
 
-      /* Cor Persistente (Dominante) */
       --brand-cobalt: #1d4ed8;
       --brand-cobalt-dark: #1e3a8a;
       --brand-cobalt-soft: #eff6ff;
 
-      /* Acentos Sólidos Funcionais (Semânticos) */
       --accent-emerald: #0f766e;
       --accent-emerald-soft: #f0fdfa;
       --accent-amber: #b45309;
@@ -32,7 +29,6 @@
       --accent-terracotta: #c2410c;
       --accent-terracotta-soft: #fff7ed;
 
-      /* Tipografia */
       --ink-dark: #111827;
       --ink-body: #374151;
       --ink-muted: #6b7280;
@@ -71,7 +67,6 @@
       }
     }
 
-    /* Fundo editorial claro com malha arquitetônica sutil e bloco sólido de ancoragem */
     .ambient-backdrop {
       position: fixed;
       inset: 0;
@@ -123,12 +118,280 @@
       pointer-events: none;
     }
 
-    /* Z-index 120 garante que o cursor customizado apareça acima do modal de login (z-index 90) */
     #stageCanvas {
       position: fixed;
       inset: 0;
       z-index: 120;
       pointer-events: none;
+    }
+
+    /* =========================================================================
+       DOCK RETANGULAR DA CONTA NO CANTO SUPERIOR ESQUERDO (EXPANDE P/ DIREITA)
+       ========================================================================= */
+    .account-corner-dock {
+      position: fixed;
+      top: max(18px, calc(env(safe-area-inset-top, 12px) + 8px));
+      left: 18px;
+      z-index: 80;
+      display: none;
+      align-items: flex-start;
+    }
+
+    .account-corner-dock.is-logged {
+      display: flex;
+    }
+
+    .account-rect-box {
+      background: #ffffff;
+      border: 1.5px solid var(--border-crisp);
+      border-left: 4px solid var(--brand-cobalt);
+      border-radius: 14px;
+      box-shadow:
+        0 6px 14px rgba(15, 23, 42, 0.09),
+        0 18px 36px -8px rgba(15, 23, 42, 0.20);
+      overflow: hidden;
+      width: 224px;
+      max-width: calc(100vw - 36px);
+      transition:
+        width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 0.2s ease,
+        box-shadow 0.25s ease;
+    }
+
+    .account-rect-box.is-expanded {
+      width: 396px;
+      border-color: var(--brand-cobalt);
+      box-shadow:
+        0 10px 24px rgba(29, 78, 216, 0.14),
+        0 28px 56px -10px rgba(15, 23, 42, 0.28);
+    }
+
+    .account-rect-trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 13px;
+      background: transparent;
+      border: none;
+      font-family: inherit;
+      text-align: left;
+      color: var(--ink-dark);
+      transition: background 0.18s ease;
+    }
+
+    .account-rect-trigger:hover {
+      background: #f8fafc;
+    }
+
+    .account-identity-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .account-avatar-rect {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: var(--brand-cobalt);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .account-text-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .account-name-line {
+      font-size: 0.83rem;
+      font-weight: 700;
+      color: var(--ink-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .account-sub-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.69rem;
+      color: var(--ink-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .account-chevron-icon {
+      flex-shrink: 0;
+      color: var(--ink-muted);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), color 0.18s ease;
+    }
+
+    .account-rect-box.is-expanded .account-chevron-icon {
+      transform: rotate(90deg);
+      color: var(--brand-cobalt);
+    }
+
+    .account-drawer-panel {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px 15px 15px;
+      border-top: 1px solid var(--border-crisp);
+      background: #fafbfd;
+      text-align: left;
+    }
+
+    .account-rect-box.is-expanded .account-drawer-panel {
+      display: flex;
+    }
+
+    .acc-meta-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 9px;
+      background: var(--brand-cobalt-soft);
+      border: 1px solid #bfdbfe;
+      font-size: 0.74rem;
+      color: var(--brand-cobalt-dark);
+      font-weight: 600;
+    }
+
+    .acc-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .acc-field-group label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--ink-body);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .acc-inline-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .acc-inline-row input {
+      flex: 1;
+      min-width: 0;
+      height: 35px;
+      border-radius: 9px;
+      border: 1.5px solid var(--border-crisp);
+      background: #ffffff;
+      padding: 0 10px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      color: var(--ink-dark);
+      outline: none;
+    }
+
+    .acc-inline-row input:focus {
+      border-color: var(--brand-cobalt);
+    }
+
+    .acc-save-mini {
+      height: 35px;
+      padding: 0 12px;
+      border-radius: 9px;
+      border: none;
+      background: var(--brand-cobalt);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 600;
+      flex-shrink: 0;
+      transition: background 0.18s ease;
+    }
+
+    .acc-save-mini:hover {
+      background: var(--brand-cobalt-dark);
+    }
+
+    .acc-drawer-msg {
+      display: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 7px 10px;
+      border-radius: 8px;
+      line-height: 1.4;
+    }
+
+    .acc-drawer-msg.is-ok {
+      display: block;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .acc-drawer-msg.is-err {
+      display: block;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .acc-footer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-crisp);
+    }
+
+    .acc-btn-logout {
+      flex: 1;
+      height: 35px;
+      border-radius: 9px;
+      border: 1.5px solid var(--border-crisp);
+      background: #ffffff;
+      color: var(--ink-dark);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.18s ease;
+    }
+
+    .acc-btn-logout:hover {
+      border-color: var(--ink-dark);
+      background: #f1f5f9;
+    }
+
+    .acc-btn-delete {
+      height: 35px;
+      padding: 0 11px;
+      border-radius: 9px;
+      border: 1.5px solid #fecaca;
+      background: #fef2f2;
+      color: #b91c1c;
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 600;
+      transition: all 0.18s ease;
+    }
+
+    .acc-btn-delete:hover {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: #ffffff;
     }
 
     main {
@@ -137,56 +400,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: max(9vh, calc(env(safe-area-inset-top, 20px) + 36px)) 18px 48px;
+      padding: max(11vh, calc(env(safe-area-inset-top, 20px) + 58px)) 18px 48px;
       text-align: center;
       width: 100%;
-    }
-
-    /* Barra superior exibida apenas quando o usuário já está autenticado */
-    .top-auth-bar {
-      width: 100%;
-      max-width: 720px;
-      display: none;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .top-auth-bar.is-logged {
-      display: flex;
-    }
-
-    .auth-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #ffffff;
-      border: 1.5px solid var(--border-crisp);
-      border-radius: 999px;
-      height: 36px;
-      padding: 0 14px;
-      font-family: inherit;
-      font-size: 0.79rem;
-      font-weight: 600;
-      color: var(--ink-dark);
-      box-shadow:
-        0 4px 10px rgba(15, 23, 42, 0.08),
-        0 10px 22px -6px rgba(15, 23, 42, 0.14);
-      transition: all 0.18s ease;
-    }
-
-    .auth-chip:hover {
-      border-color: var(--brand-cobalt);
-      color: var(--brand-cobalt);
-      transform: translateY(-1px);
-    }
-
-    .auth-chip-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #059669;
     }
 
     h1 {
@@ -421,7 +637,6 @@
       display: none;
     }
 
-    /* Pílulas com cores sólidas funcionais por categoria (quando ativas) */
     .focus-pill {
       appearance: none;
       flex-shrink: 0;
@@ -460,7 +675,6 @@
       color: var(--ink-dark);
     }
 
-    /* 1. Datas -> Azul Cobalto (Persistente) */
     .focus-pill[data-pill="datas"].active {
       background: var(--brand-cobalt-soft);
       color: var(--brand-cobalt);
@@ -473,7 +687,6 @@
       color: #ffffff;
     }
 
-    /* 2. Vagas -> Verde Esmeralda */
     .focus-pill[data-pill="vagas"].active {
       background: var(--accent-emerald-soft);
       color: var(--accent-emerald);
@@ -486,7 +699,6 @@
       color: #ffffff;
     }
 
-    /* 3. Requisitos -> Âmbar Ocre */
     .focus-pill[data-pill="requisitos"].active {
       background: var(--accent-amber-soft);
       color: var(--accent-amber);
@@ -499,7 +711,6 @@
       color: #ffffff;
     }
 
-    /* 4. Provas -> Terracota / Coral */
     .focus-pill[data-pill="provas"].active {
       background: var(--accent-terracotta-soft);
       color: var(--accent-terracotta);
@@ -564,7 +775,6 @@
       background: #dc2626;
     }
 
-    /* Botão principal na cor persistente (Azul Cobalto sólido) */
     .btn-generate {
       background: var(--brand-cobalt);
       color: #ffffff;
@@ -610,7 +820,6 @@
       transform: rotate(45deg) translateX(16px) scale(0.5);
     }
 
-    /* Exemplos claros com bordas/badges de cores sólidas distintas */
     .quick-samples {
       margin-top: 18px;
       width: 100%;
@@ -681,8 +890,8 @@
 
     .destination-section {
       width: 100%;
-      max-width: 720px;
-      margin-top: 26vh;
+      max-width: 760px;
+      margin-top: 24vh;
       margin-bottom: 10vh;
       display: flex;
       flex-direction: column;
@@ -716,14 +925,14 @@
       border: 1.5px solid var(--border-crisp);
       border-top: 4px solid var(--brand-cobalt);
       border-radius: 24px;
-      padding: 22px 24px;
+      padding: 24px 26px;
       box-shadow:
         0 4px 8px rgba(15, 23, 42, 0.08),
         0 16px 32px -6px rgba(15, 23, 42, 0.18),
         0 32px 64px -14px rgba(15, 23, 42, 0.24);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
       text-align: left;
       position: relative;
     }
@@ -735,7 +944,7 @@
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 10px;
-      padding-bottom: 13px;
+      padding-bottom: 14px;
       border-bottom: 1px solid var(--border-crisp);
     }
 
@@ -747,7 +956,7 @@
     }
 
     .result-dock-title {
-      font-size: 1.02rem;
+      font-size: 1.08rem;
       font-weight: 700;
       color: var(--ink-dark);
       letter-spacing: -0.02em;
@@ -761,7 +970,7 @@
       border: 1px solid #bfdbfe;
       padding: 3px 10px;
       border-radius: 999px;
-      max-width: 240px;
+      max-width: 260px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -784,13 +993,13 @@
     .structured-analysis {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
     }
 
     .overview-row {
       display: flex;
       flex-direction: column;
-      gap: 9px;
+      gap: 10px;
     }
 
     .status-strip {
@@ -829,27 +1038,26 @@
     }
 
     .analysis-overview {
-      font-size: 0.94rem;
-      line-height: 1.6;
+      font-size: 0.95rem;
+      line-height: 1.65;
       color: var(--ink-body);
     }
 
     .analysis-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 12px;
     }
 
-    /* Cada bloco do grid 2x2 ganha sua cor sólida de identidade funcional */
     .analysis-metric {
       background: #f8fafc;
       border: 1.5px solid var(--border-crisp);
       border-left-width: 4px;
       border-radius: 14px;
-      padding: 13px 14px;
+      padding: 15px 16px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 8px;
       box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.08);
     }
 
@@ -886,10 +1094,12 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     .metric-label {
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -897,19 +1107,54 @@
 
     .metric-value {
       font-size: 0.87rem;
-      line-height: 1.48;
+      line-height: 1.56;
       color: var(--ink-dark);
-      font-weight: 500;
+      font-weight: 400;
+    }
+
+    .rich-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .rich-line-item {
+      display: block;
+    }
+
+    .traps-box {
+      background: #fff7ed;
+      border: 1.5px solid #fed7aa;
+      border-left: 4px solid #c2410c;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .traps-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #9a3412;
+    }
+
+    .traps-text {
+      font-size: 0.87rem;
+      line-height: 1.55;
+      color: #431407;
     }
 
     .checklist-box {
       background: var(--brand-cobalt-soft);
       border: 1px solid #bfdbfe;
       border-radius: 14px;
-      padding: 13px 15px;
+      padding: 15px 16px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .checklist-header {
@@ -921,7 +1166,7 @@
     }
 
     .checklist-title {
-      font-size: 0.81rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: var(--brand-cobalt);
     }
@@ -938,7 +1183,7 @@
 
     .checklist-text {
       font-size: 0.87rem;
-      line-height: 1.52;
+      line-height: 1.56;
       color: var(--ink-dark);
     }
 
@@ -1182,13 +1427,13 @@
     }
 
     /* =========================================================================
-       TEMPLATE OCULTO PARA GERAÇÃO DO PDF EDITORIAL ESTRUTURADO
+       TEMPLATE PARA GERAÇÃO DO PDF EDITORIAL COMPLETO E MULTIPÁGINA
        ========================================================================= */
     .pdf-export-staging {
       position: fixed;
-      left: -9999px;
+      left: -12000px;
       top: 0;
-      width: 794px;
+      width: 720px;
       background: #ffffff;
       color: #111827;
       z-index: -1;
@@ -1196,14 +1441,14 @@
     }
 
     .pdf-sheet {
-      width: 794px;
+      width: 720px;
       background: #ffffff;
       font-family: 'Inter', sans-serif;
       color: #111827;
     }
 
     .pdf-top-stripe {
-      height: 10px;
+      height: 8px;
       width: 100%;
       background: linear-gradient(
         90deg,
@@ -1216,24 +1461,21 @@
         #c2410c 87%,
         #c2410c 100%
       );
-    }
-
-    .pdf-inner {
-      padding: 36px 42px 34px;
+      margin-bottom: 18px;
     }
 
     .pdf-brand-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 16px;
+      padding-bottom: 14px;
       border-bottom: 2px solid #e2e8f0;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }
 
     .pdf-brand-logo {
       font-family: 'Permanent Marker', cursive;
-      font-size: 28px;
+      font-size: 26px;
       color: #1d4ed8;
       letter-spacing: 0.02em;
     }
@@ -1241,7 +1483,7 @@
     .pdf-brand-meta {
       text-align: right;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 10.5px;
       color: #475569;
       line-height: 1.5;
     }
@@ -1250,9 +1492,11 @@
       background: #f8fafc;
       border: 1.5px solid #cbd5e1;
       border-left: 6px solid #1d4ed8;
-      border-radius: 14px;
-      padding: 20px 22px;
-      margin-bottom: 20px;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .pdf-badges-row {
@@ -1260,14 +1504,14 @@
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 10px;
+      margin-bottom: 9px;
     }
 
     .pdf-badge {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 3px 9px;
       border-radius: 999px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -1305,40 +1549,41 @@
 
     .pdf-doc-title {
       font-family: 'Merriweather', Georgia, serif;
-      font-size: 21px;
+      font-size: 19px;
       font-weight: 900;
       color: #0f172a;
-      line-height: 1.28;
-      margin-bottom: 6px;
+      line-height: 1.3;
+      margin-bottom: 5px;
     }
 
     .pdf-doc-org {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       color: #1d4ed8;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .pdf-doc-summary {
       font-family: 'Inter', sans-serif;
-      font-size: 13px;
+      font-size: 12.5px;
       line-height: 1.62;
-      color: #334155;
+      color: #1e293b;
     }
 
-    .pdf-cards-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+    /* Fluxo vertical em coluna única no PDF evita cortes horizontais e preserva 100% do texto */
+    .pdf-sections-stack {
+      display: flex;
+      flex-direction: column;
       gap: 14px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .pdf-card {
-      border-radius: 14px;
-      padding: 16px 18px;
+      border-radius: 12px;
+      padding: 15px 18px;
       border: 1.5px solid #cbd5e1;
-      border-top-width: 5px;
+      border-left-width: 6px;
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -1346,65 +1591,76 @@
     .pdf-card-datas {
       background: #eff6ff;
       border-color: #bfdbfe;
-      border-top-color: #1d4ed8;
+      border-left-color: #1d4ed8;
     }
 
     .pdf-card-vagas {
       background: #f0fdfa;
       border-color: #99f6e4;
-      border-top-color: #0f766e;
+      border-left-color: #0f766e;
     }
 
     .pdf-card-requisitos {
       background: #fffbeb;
       border-color: #fde68a;
-      border-top-color: #b45309;
+      border-left-color: #b45309;
     }
 
     .pdf-card-provas {
       background: #fff7ed;
       border-color: #fed7aa;
-      border-top-color: #c2410c;
+      border-left-color: #c2410c;
+    }
+
+    .pdf-card-armadilhas {
+      background: #fef2f2;
+      border-color: #fecaca;
+      border-left-color: #dc2626;
     }
 
     .pdf-card-kicker {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .pdf-card-datas .pdf-card-kicker { color: #1d4ed8; }
     .pdf-card-vagas .pdf-card-kicker { color: #0f766e; }
     .pdf-card-requisitos .pdf-card-kicker { color: #b45309; }
     .pdf-card-provas .pdf-card-kicker { color: #c2410c; }
+    .pdf-card-armadilhas .pdf-card-kicker { color: #dc2626; }
 
     .pdf-card-heading {
       font-family: 'Merriweather', Georgia, serif;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
       color: #0f172a;
       margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.10);
     }
 
     .pdf-card-body {
       font-family: 'Inter', sans-serif;
-      font-size: 12.2px;
-      line-height: 1.55;
-      color: #1e293b;
+      font-size: 12px;
+      line-height: 1.58;
+      color: #0f172a;
+    }
+
+    .pdf-line-row {
+      margin-bottom: 4px;
     }
 
     .pdf-checklist-panel {
       background: #0f172a;
       color: #f8fafc;
-      border-radius: 14px;
-      padding: 18px 22px;
+      border-radius: 12px;
+      padding: 16px 20px;
       border-left: 6px solid #3b82f6;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -1418,15 +1674,15 @@
 
     .pdf-checklist-title {
       font-family: 'Merriweather', Georgia, serif;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
       color: #93c5fd;
     }
 
     .pdf-checklist-tag {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      padding: 3px 9px;
+      font-size: 9.5px;
+      padding: 3px 8px;
       border-radius: 999px;
       background: rgba(59, 130, 246, 0.22);
       color: #bfdbfe;
@@ -1435,7 +1691,7 @@
 
     .pdf-checklist-body {
       font-family: 'Inter', sans-serif;
-      font-size: 12.5px;
+      font-size: 12px;
       line-height: 1.58;
       color: #e2e8f0;
     }
@@ -1444,23 +1700,34 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-top: 12px;
+      padding-top: 10px;
       border-top: 1px solid #cbd5e1;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 9.5px;
       color: #64748b;
     }
 
-    /* =========================================================================
-       OTIMIZAÇÃO DEDICADA PARA MOBILE (TELAS <= 680px)
-       ========================================================================= */
     @media (max-width: 680px) {
       body {
         min-height: 120dvh;
       }
 
+      .account-corner-dock {
+        top: max(12px, calc(env(safe-area-inset-top, 10px) + 6px));
+        left: 12px;
+      }
+
+      .account-rect-box {
+        width: 196px;
+        max-width: calc(100vw - 24px);
+      }
+
+      .account-rect-box.is-expanded {
+        width: calc(100vw - 24px);
+      }
+
       main {
-        padding: max(6.5vh, calc(env(safe-area-inset-top, 16px) + 24px)) 14px 36px;
+        padding: max(9vh, calc(env(safe-area-inset-top, 16px) + 62px)) 14px 36px;
       }
 
       h1 {
@@ -1589,11 +1856,11 @@
 
       .analysis-grid {
         grid-template-columns: 1fr;
-        gap: 9px;
+        gap: 10px;
       }
 
       .analysis-metric {
-        padding: 12px 13px;
+        padding: 13px 14px;
       }
     }
   </style>
@@ -1611,15 +1878,63 @@
     <path d="M0,152 C420,175 840,55 1440,138" fill="none" stroke="rgba(15,118,110,0.12)" stroke-width="1.2"/>
   </svg>
 
-  <main>
-    <!-- Exibido apenas quando o usuário estiver autenticado -->
-    <div class="top-auth-bar" id="topAuthBar">
-      <button type="button" class="auth-chip" id="btnAuthTrigger">
-        <span class="auth-chip-dot" id="authStatusDot"></span>
-        <span id="authStatusLabel">Conta ativa · 25/dia</span>
+  <!-- Dock retangular da conta no canto superior esquerdo (expande para a direita) -->
+  <aside class="account-corner-dock" id="accountCornerDock">
+    <div class="account-rect-box" id="accountRectBox">
+      <button type="button" class="account-rect-trigger" id="btnAccountToggle" aria-expanded="false">
+        <div class="account-identity-row">
+          <div class="account-avatar-rect" id="accountAvatarInitial">U</div>
+          <div class="account-text-col">
+            <span class="account-name-line" id="accountDisplayName">Minha Conta</span>
+            <span class="account-sub-line" id="accountEmailShort">25 análises/dia</span>
+          </div>
+        </div>
+        <svg class="account-chevron-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
       </button>
-    </div>
 
+      <div class="account-drawer-panel" id="accountDrawerPanel">
+        <div class="acc-meta-strip">
+          <span id="accFullEmailLabel">usuario@email.com</span>
+          <span>Plano Gratuito · 25/dia</span>
+        </div>
+
+        <div class="acc-field-group">
+          <label for="accEditNameInput">Nome de usuário</label>
+          <div class="acc-inline-row">
+            <input type="text" id="accEditNameInput" placeholder="Seu nome de exibição">
+            <button type="button" class="acc-save-mini" id="btnSaveUserName">Salvar</button>
+          </div>
+        </div>
+
+        <div class="acc-field-group">
+          <label for="accEditEmailInput">Alterar e-mail</label>
+          <div class="acc-inline-row">
+            <input type="email" id="accEditEmailInput" placeholder="novo@email.com">
+            <button type="button" class="acc-save-mini" id="btnSaveUserEmail">Atualizar</button>
+          </div>
+        </div>
+
+        <div class="acc-field-group">
+          <label for="accEditPasswordInput">Nova senha (mín. 6 caracteres)</label>
+          <div class="acc-inline-row">
+            <input type="password" id="accEditPasswordInput" placeholder="••••••••">
+            <button type="button" class="acc-save-mini" id="btnSaveUserPassword">Alterar</button>
+          </div>
+        </div>
+
+        <div class="acc-drawer-msg" id="accDrawerMsg"></div>
+
+        <div class="acc-footer-actions">
+          <button type="button" class="acc-btn-logout" id="btnDrawerLogout">Sair da conta</button>
+          <button type="button" class="acc-btn-delete" id="btnDrawerDeleteAccount">Excluir conta</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
     <h1>Krisis.</h1>
 
     <p class="hero-sub">
@@ -1757,7 +2072,7 @@
     <span>Krisis · Leitura inteligente de editais. Confira sempre o documento oficial.</span>
   </footer>
 
-  <!-- Modal de Autenticação Supabase (abre ao clicar em Analisar quando deslogado) -->
+  <!-- Modal de Login / Cadastro Supabase -->
   <div class="auth-modal-backdrop" id="authModalBackdrop">
     <div class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
       <div class="auth-modal-header">
@@ -1769,6 +2084,10 @@
       </p>
 
       <div id="authFormFields">
+        <div class="auth-field" style="margin-bottom: 10px;">
+          <label for="authNameInput">Nome de usuário (opcional ao entrar)</label>
+          <input type="text" id="authNameInput" placeholder="Como deseja ser chamado" autocomplete="name">
+        </div>
         <div class="auth-field" style="margin-bottom: 10px;">
           <label for="authEmailInput">E-mail</label>
           <input type="email" id="authEmailInput" placeholder="voce@exemplo.com" autocomplete="email">
@@ -1785,14 +2104,10 @@
         <button type="button" class="auth-btn-primary" id="btnAuthLogin">Entrar e analisar</button>
         <button type="button" class="auth-btn-secondary" id="btnAuthSignup">Criar conta gratuita e analisar</button>
       </div>
-
-      <div class="auth-actions" id="authLoggedActions" style="display: none;">
-        <button type="button" class="auth-btn-secondary" id="btnAuthLogout">Sair da conta</button>
-      </div>
     </div>
   </div>
 
-  <!-- Área invisível onde o documento PDF é montado antes do download -->
+  <!-- Área de montagem para exportação do PDF completo -->
   <div class="pdf-export-staging" id="pdfExportStaging"></div>
 
   <script>
@@ -1801,7 +2116,7 @@
     }
 
     /* =========================================================================
-       0. CLIENTE SUPABASE AUTH (CREDENCIAIS CONFIGURADAS)
+       0. CLIENTE SUPABASE AUTH & PAINEL RETANGULAR DA CONTA (CANTO SUP. ESQUERDO)
        ========================================================================= */
     const SUPABASE_URL = 'https://motorkzdvzdkdzkiqcwa.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_Q8EObZyCB6lX5Xt7l1tYcA_XBAYfOP_';
@@ -1816,22 +2131,40 @@
 
     let currentSession = null;
     let pendingAnalysisAfterAuth = false;
+    let confirmDeleteArmed = false;
 
-    const topAuthBar = document.getElementById('topAuthBar');
-    const btnAuthTrigger = document.getElementById('btnAuthTrigger');
-    const authStatusLabel = document.getElementById('authStatusLabel');
+    const accountCornerDock = document.getElementById('accountCornerDock');
+    const accountRectBox = document.getElementById('accountRectBox');
+    const btnAccountToggle = document.getElementById('btnAccountToggle');
+    const accountAvatarInitial = document.getElementById('accountAvatarInitial');
+    const accountDisplayName = document.getElementById('accountDisplayName');
+    const accountEmailShort = document.getElementById('accountEmailShort');
+    const accFullEmailLabel = document.getElementById('accFullEmailLabel');
+    const accEditNameInput = document.getElementById('accEditNameInput');
+    const accEditEmailInput = document.getElementById('accEditEmailInput');
+    const accEditPasswordInput = document.getElementById('accEditPasswordInput');
+    const btnSaveUserName = document.getElementById('btnSaveUserName');
+    const btnSaveUserEmail = document.getElementById('btnSaveUserEmail');
+    const btnSaveUserPassword = document.getElementById('btnSaveUserPassword');
+    const accDrawerMsg = document.getElementById('accDrawerMsg');
+    const btnDrawerLogout = document.getElementById('btnDrawerLogout');
+    const btnDrawerDeleteAccount = document.getElementById('btnDrawerDeleteAccount');
+
     const authModalBackdrop = document.getElementById('authModalBackdrop');
     const btnCloseAuthModal = document.getElementById('btnCloseAuthModal');
-    const authModalSub = document.getElementById('authModalSub');
-    const authFormFields = document.getElementById('authFormFields');
+    const authNameInput = document.getElementById('authNameInput');
     const authEmailInput = document.getElementById('authEmailInput');
     const authPasswordInput = document.getElementById('authPasswordInput');
     const authFeedback = document.getElementById('authFeedback');
-    const authGuestActions = document.getElementById('authGuestActions');
-    const authLoggedActions = document.getElementById('authLoggedActions');
     const btnAuthLogin = document.getElementById('btnAuthLogin');
     const btnAuthSignup = document.getElementById('btnAuthSignup');
-    const btnAuthLogout = document.getElementById('btnAuthLogout');
+
+    function setDrawerMsg(msg, type) {
+      accDrawerMsg.className = 'acc-drawer-msg';
+      if (!msg) return;
+      accDrawerMsg.textContent = msg;
+      accDrawerMsg.classList.add(type === 'ok' ? 'is-ok' : 'is-err');
+    }
 
     function setAuthFeedback(msg, type) {
       authFeedback.className = 'auth-feedback';
@@ -1853,22 +2186,48 @@
       authModalBackdrop.classList.remove('is-open');
     }
 
+    function toggleAccountDrawer(forceState) {
+      const nextState = typeof forceState === 'boolean'
+        ? forceState
+        : !accountRectBox.classList.contains('is-expanded');
+      accountRectBox.classList.toggle('is-expanded', nextState);
+      btnAccountToggle.setAttribute('aria-expanded', String(nextState));
+      if (!nextState) {
+        setDrawerMsg('', '');
+        confirmDeleteArmed = false;
+        btnDrawerDeleteAccount.textContent = 'Excluir conta';
+      }
+    }
+
+    btnAccountToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleAccountDrawer();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (accountRectBox.classList.contains('is-expanded') && !accountCornerDock.contains(e.target)) {
+        toggleAccountDrawer(false);
+      }
+    });
+
     function syncAuthUI() {
       if (currentSession && currentSession.user) {
-        const email = currentSession.user.email || 'Conta ativa';
-        const shortUser = email.split('@')[0].slice(0, 16);
-        topAuthBar.classList.add('is-logged');
-        authStatusLabel.textContent = `${shortUser} · 25/dia`;
-        authModalSub.innerHTML = `Conectado como <strong>${escapeHTML(email)}</strong>. Seu limite diário é de <strong>25 análises por dia</strong>.`;
-        authFormFields.style.display = 'none';
-        authGuestActions.style.display = 'none';
-        authLoggedActions.style.display = 'flex';
+        const user = currentSession.user;
+        const email = user.email || 'usuario@krisis.app';
+        const metaName = (user.user_metadata && (user.user_metadata.display_name || user.user_metadata.full_name)) || '';
+        const resolvedName = metaName.trim() || email.split('@')[0];
+        const initial = resolvedName.charAt(0).toUpperCase() || 'K';
+
+        accountCornerDock.classList.add('is-logged');
+        accountAvatarInitial.textContent = initial;
+        accountDisplayName.textContent = resolvedName;
+        accountEmailShort.textContent = email;
+        accFullEmailLabel.textContent = email;
+        accEditNameInput.value = metaName;
+        accEditEmailInput.value = email;
       } else {
-        topAuthBar.classList.remove('is-logged');
-        authModalSub.innerHTML = 'Entre ou crie sua conta gratuita para iniciar sua análise e liberar <strong>25 leituras por dia</strong>.';
-        authFormFields.style.display = 'block';
-        authGuestActions.style.display = 'flex';
-        authLoggedActions.style.display = 'none';
+        accountCornerDock.classList.remove('is-logged');
+        toggleAccountDrawer(false);
       }
 
       if (typeof ModelArmorClient !== 'undefined') {
@@ -1877,8 +2236,99 @@
       }
     }
 
-    btnAuthTrigger.addEventListener('click', () => {
-      openAuthModal(false);
+    btnSaveUserName.addEventListener('click', async () => {
+      if (!supabaseClient || !currentSession) return;
+      const newName = accEditNameInput.value.trim();
+      if (newName.length < 2) {
+        setDrawerMsg('Digite um nome com pelo menos 2 caracteres.', 'err');
+        return;
+      }
+      setDrawerMsg('Salvando nome...', 'ok');
+      const { data, error } = await supabaseClient.auth.updateUser({
+        data: { display_name: newName }
+      });
+      if (error) {
+        setDrawerMsg(error.message || 'Erro ao atualizar nome.', 'err');
+        return;
+      }
+      if (data && data.user) {
+        currentSession.user = data.user;
+        syncAuthUI();
+      }
+      setDrawerMsg('Nome de usuário atualizado!', 'ok');
+    });
+
+    btnSaveUserEmail.addEventListener('click', async () => {
+      if (!supabaseClient || !currentSession) return;
+      const newEmail = accEditEmailInput.value.trim();
+      if (!newEmail || !newEmail.includes('@')) {
+        setDrawerMsg('Informe um endereço de e-mail válido.', 'err');
+        return;
+      }
+      if (newEmail === currentSession.user.email) {
+        setDrawerMsg('Este já é o seu e-mail atual.', 'err');
+        return;
+      }
+      setDrawerMsg('Atualizando e-mail...', 'ok');
+      const { data, error } = await supabaseClient.auth.updateUser({ email: newEmail });
+      if (error) {
+        setDrawerMsg(error.message || 'Não foi possível alterar o e-mail.', 'err');
+        return;
+      }
+      if (data && data.user) {
+        currentSession.user = data.user;
+        syncAuthUI();
+      }
+      setDrawerMsg('E-mail atualizado! Verifique sua caixa de entrada se a confirmação estiver ativa.', 'ok');
+    });
+
+    btnSaveUserPassword.addEventListener('click', async () => {
+      if (!supabaseClient || !currentSession) return;
+      const newPassword = accEditPasswordInput.value;
+      if (!newPassword || newPassword.length < 6) {
+        setDrawerMsg('A nova senha deve ter no mínimo 6 caracteres.', 'err');
+        return;
+      }
+      setDrawerMsg('Alterando senha...', 'ok');
+      const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+      if (error) {
+        setDrawerMsg(error.message || 'Erro ao alterar senha.', 'err');
+        return;
+      }
+      accEditPasswordInput.value = '';
+      setDrawerMsg('Senha alterada com sucesso!', 'ok');
+    });
+
+    btnDrawerLogout.addEventListener('click', async () => {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      currentSession = null;
+      pendingAnalysisAfterAuth = false;
+      syncAuthUI();
+    });
+
+    btnDrawerDeleteAccount.addEventListener('click', async () => {
+      if (!supabaseClient || !currentSession) return;
+      if (!confirmDeleteArmed) {
+        confirmDeleteArmed = true;
+        btnDrawerDeleteAccount.textContent = 'Confirmar exclusão?';
+        setDrawerMsg('Clique novamente em "Confirmar exclusão?" para apagar permanentemente sua conta e histórico.', 'err');
+        return;
+      }
+
+      setDrawerMsg('Excluindo conta...', 'ok');
+      const { error } = await supabaseClient.rpc('delete_own_account');
+      if (error) {
+        confirmDeleteArmed = false;
+        btnDrawerDeleteAccount.textContent = 'Excluir conta';
+        setDrawerMsg('Ative a função SQL delete_own_account() no Supabase para exclusão automática.', 'err');
+        return;
+      }
+
+      await supabaseClient.auth.signOut();
+      currentSession = null;
+      confirmDeleteArmed = false;
+      btnDrawerDeleteAccount.textContent = 'Excluir conta';
+      syncAuthUI();
     });
 
     btnCloseAuthModal.addEventListener('click', () => {
@@ -1913,1590 +2363,3 @@
         return;
       }
       setAuthFeedback('Entrando...', 'ok');
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        setAuthFeedback(error.message || 'Não foi possível entrar.', 'err');
-        return;
-      }
-      currentSession = data.session;
-      setAuthFeedback('', '');
-      syncAuthUI();
-      onAuthSuccessResumeIfNeeded();
-    });
-
-    btnAuthSignup.addEventListener('click', async () => {
-      if (!supabaseClient) {
-        setAuthFeedback('Erro ao inicializar cliente Supabase.', 'err');
-        return;
-      }
-      const email = authEmailInput.value.trim();
-      const password = authPasswordInput.value;
-      if (!email || password.length < 6) {
-        setAuthFeedback('Informe um e-mail válido e senha com no mínimo 6 caracteres.', 'err');
-        return;
-      }
-      setAuthFeedback('Criando conta...', 'ok');
-      const { data, error } = await supabaseClient.auth.signUp({ email, password });
-      if (error) {
-        setAuthFeedback(error.message || 'Erro ao criar conta.', 'err');
-        return;
-      }
-      if (data.session) {
-        currentSession = data.session;
-        syncAuthUI();
-        onAuthSuccessResumeIfNeeded();
-      } else {
-        setAuthFeedback('Conta criada! Desative "Confirm email" no Supabase Auth para entrar sem precisar abrir o e-mail.', 'ok');
-      }
-    });
-
-    btnAuthLogout.addEventListener('click', async () => {
-      if (supabaseClient) await supabaseClient.auth.signOut();
-      currentSession = null;
-      pendingAnalysisAfterAuth = false;
-      syncAuthUI();
-      closeAuthModal();
-    });
-
-    if (supabaseClient) {
-      supabaseClient.auth.getSession().then(({ data }) => {
-        currentSession = data.session || null;
-        syncAuthUI();
-      });
-      supabaseClient.auth.onAuthStateChange((_event, session) => {
-        currentSession = session || null;
-        syncAuthUI();
-      });
-    }
-
-    /* =========================================================================
-       1. SOUND DESIGN MINIMALISTA (WEB AUDIO API)
-       ========================================================================= */
-    const SoundFX = (() => {
-      let ctx = null;
-
-      function ensureCtx() {
-        if (!ctx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          if (AudioCtx) ctx = new AudioCtx();
-        }
-        if (ctx && ctx.state === 'suspended') {
-          ctx.resume().catch(() => {});
-        }
-        return ctx;
-      }
-
-      function playDustSweep(durationSec = 0.28) {
-        const audio = ensureCtx();
-        if (!audio) return;
-        const now = audio.currentTime;
-        const bufferSize = Math.floor(audio.sampleRate * durationSec);
-        const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          const env = Math.sin((i / bufferSize) * Math.PI);
-          data[i] = (Math.random() * 2 - 1) * env * 0.35;
-        }
-
-        const noise = audio.createBufferSource();
-        noise.buffer = buffer;
-
-        const filter = audio.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.Q.value = 1.6;
-        filter.frequency.setValueAtTime(2400, now);
-        filter.frequency.exponentialRampToValueAtTime(680, now + durationSec);
-
-        const gain = audio.createGain();
-        gain.gain.setValueAtTime(0.05, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(audio.destination);
-        noise.start(now);
-      }
-
-      function playAirWhoosh(durationSec = 1.6) {
-        const audio = ensureCtx();
-        if (!audio) return;
-        const now = audio.currentTime;
-        const bufferSize = Math.floor(audio.sampleRate * durationSec);
-        const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-
-        const noise = audio.createBufferSource();
-        noise.buffer = buffer;
-
-        const filter = audio.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.Q.value = 1.2;
-        filter.frequency.setValueAtTime(180, now);
-        filter.frequency.linearRampToValueAtTime(540, now + durationSec * 0.45);
-        filter.frequency.exponentialRampToValueAtTime(140, now + durationSec);
-
-        const gain = audio.createGain();
-        gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.04, now + durationSec * 0.35);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(audio.destination);
-        noise.start(now);
-      }
-
-      return {
-        playDustSweep,
-        playAirWhoosh
-      };
-    })();
-
-    /* =========================================================================
-       2. CONFIGURAÇÃO DE CANVAS
-       ========================================================================= */
-    const isFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    const liquidCanvas = document.getElementById('liquidCanvas');
-    const liquidCtx = liquidCanvas.getContext('2d');
-    const stageCanvas = document.getElementById('stageCanvas');
-    const stageCtx = stageCanvas.getContext('2d');
-
-    let W = window.innerWidth;
-    let H = window.innerHeight;
-
-    function resizeCanvases() {
-      W = window.innerWidth;
-      H = window.innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-
-      [liquidCanvas, stageCanvas].forEach(c => {
-        c.width = W * dpr;
-        c.height = H * dpr;
-        c.style.width = W + 'px';
-        c.style.height = H + 'px';
-        const ctx = c.getContext('2d');
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      });
-    }
-    resizeCanvases();
-    window.addEventListener('resize', resizeCanvases);
-
-    /* =========================================================================
-       3. CURSOR (DESKTOP) & ONDAS DO BACKGROUND
-       ========================================================================= */
-    const customCursor = {
-      x: W / 2,
-      y: H / 2,
-      targetX: W / 2,
-      targetY: H / 2,
-      lastTargetX: W / 2,
-      lastTargetY: H / 2,
-      smoothDx: 0,
-      smoothDy: 0,
-      angle: 0,
-      scale: 1,
-      isHovering: false,
-      visible: false,
-      trail: []
-    };
-
-    if (isFinePointer) {
-      window.addEventListener('mousemove', (e) => {
-        if (!customCursor.visible) {
-          customCursor.x = e.clientX;
-          customCursor.y = e.clientY;
-          customCursor.lastTargetX = e.clientX;
-          customCursor.lastTargetY = e.clientY;
-        }
-        customCursor.targetX = e.clientX;
-        customCursor.targetY = e.clientY;
-        customCursor.visible = true;
-        customCursor.isHovering = Boolean(e.target.closest('button, textarea, input, a'));
-      }, { passive: true });
-
-      document.addEventListener('mouseleave', () => {
-        customCursor.visible = false;
-      });
-    }
-
-    const liquidRipples = [];
-    function spawnSubtleRipple(x, y) {
-      if (liquidRipples.length > 4) liquidRipples.shift();
-      const scaleRand = 0.72 + Math.random() * 0.55;
-      liquidRipples.push({
-        x,
-        y,
-        radius: 8 + Math.random() * 6,
-        maxRadius: Math.min(W, H) * (0.20 + Math.random() * 0.12) * scaleRand,
-        speed: 2.3 + Math.random() * 1.1,
-        alpha: 0.22 + Math.random() * 0.12,
-        rings: Math.random() > 0.5 ? 2 : 1,
-        ringGap: 14 + Math.random() * 10,
-        wobbleAmp: 1.6 + Math.random() * 2.8,
-        wobbleFreq: Math.floor(3 + Math.random() * 4),
-        phase: Math.random() * Math.PI * 2,
-        stretchX: 0.94 + Math.random() * 0.18,
-        stretchY: 0.94 + Math.random() * 0.18,
-        rotation: Math.random() * Math.PI
-      });
-    }
-
-    window.addEventListener('pointerdown', (e) => {
-      if (!e.target.closest('.command-box, .result-dock, .sample-chip, .auth-modal-card')) {
-        spawnSubtleRipple(e.clientX, e.clientY);
-      }
-    }, { passive: true });
-
-    /* =========================================================================
-       4. EXTRATOR DE PDF LOCAL (PDF.JS) + TEXTAREA 1 LINHA EXPANSÍVEL
-       ========================================================================= */
-    const commandBox = document.getElementById('commandBox');
-    const inlineNotice = document.getElementById('inlineNotice');
-    const inlineNoticeText = document.getElementById('inlineNoticeText');
-    const btnCloseNotice = document.getElementById('btnCloseNotice');
-    const editalInput = document.getElementById('editalInput');
-    const btnClearX = document.getElementById('btnClearX');
-    const btnAttachPdf = document.getElementById('btnAttachPdf');
-    const pdfFileInput = document.getElementById('pdfFileInput');
-    const pdfAttachmentBar = document.getElementById('pdfAttachmentBar');
-    const pdfFileNameLabel = document.getElementById('pdfFileNameLabel');
-    const btnRemovePdf = document.getElementById('btnRemovePdf');
-    const btnGenerate = document.getElementById('btnGenerate');
-    const btnPlaneIcon = document.getElementById('btnPlaneIcon');
-
-    let attachedPdfData = null;
-    const dustParticles = [];
-    let isClearingText = false;
-    let clearAnimStart = 0;
-    let clearAnimDuration = 280;
-
-    function showNotice(msg) {
-      inlineNoticeText.textContent = msg;
-      inlineNotice.classList.add('is-visible');
-    }
-
-    function hideNotice() {
-      inlineNotice.classList.remove('is-visible');
-    }
-
-    btnCloseNotice.addEventListener('click', hideNotice);
-
-    function autoResizeTextarea() {
-      if (!editalInput.value) {
-        editalInput.style.height = '36px';
-        editalInput.style.overflowY = 'hidden';
-        return;
-      }
-      editalInput.style.height = '36px';
-      const nextHeight = Math.min(132, Math.max(36, editalInput.scrollHeight));
-      editalInput.style.height = nextHeight + 'px';
-      editalInput.style.overflowY = editalInput.scrollHeight > 132 ? 'auto' : 'hidden';
-    }
-
-    function syncClearButton() {
-      if ((editalInput.value.length > 0 || attachedPdfData) && !isClearingText) {
-        btnClearX.classList.add('is-active');
-      } else {
-        btnClearX.classList.remove('is-active');
-      }
-    }
-
-    function clearPdfAttachment() {
-      attachedPdfData = null;
-      pdfFileInput.value = '';
-      pdfAttachmentBar.classList.remove('is-visible');
-      syncClearButton();
-    }
-
-    btnRemovePdf.addEventListener('click', clearPdfAttachment);
-    btnAttachPdf.addEventListener('click', () => {
-      hideNotice();
-      pdfFileInput.click();
-    });
-
-    async function extractTextFromPdfFile(file) {
-      hideNotice();
-      if (!file || file.type !== 'application/pdf') {
-        showNotice('Selecione um arquivo PDF válido.');
-        return;
-      }
-
-      if (!window.pdfjsLib) {
-        showNotice('Leitor de PDF carregando. Tente novamente em 2 segundos.');
-        return;
-      }
-
-      pdfAttachmentBar.classList.add('is-visible');
-      pdfFileNameLabel.textContent = `Lendo "${file.name}"...`;
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const totalPages = pdf.numPages;
-        const maxPagesToRead = Math.min(totalPages, 35);
-
-        let fullText = '';
-        for (let pageNum = 1; pageNum <= maxPagesToRead; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const content = await page.getTextContent();
-          const pageStrings = content.items.map(item => item.str);
-          fullText += `\n[Pág. ${pageNum}] ` + pageStrings.join(' ');
-          if (fullText.length >= 26000) break;
-        }
-
-        const cleanPdfText = fullText.replace(/\s+/g, ' ').trim().slice(0, 26000);
-        if (cleanPdfText.length < 40) {
-          clearPdfAttachment();
-          showNotice('PDF escaneado sem texto selecionável. Cole o link ou trecho do edital.');
-          return;
-        }
-
-        attachedPdfData = {
-          name: file.name,
-          pagesCount: totalPages,
-          extractedText: cleanPdfText
-        };
-
-        pdfFileNameLabel.textContent = `${file.name} (${totalPages} págs.)`;
-        syncClearButton();
-      } catch (_) {
-        clearPdfAttachment();
-        showNotice('Não foi possível ler este PDF. Verifique se não possui senha.');
-      }
-    }
-
-    pdfFileInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        extractTextFromPdfFile(e.target.files[0]);
-      }
-    });
-
-    ['dragenter', 'dragover'].forEach(evt => {
-      commandBox.addEventListener(evt, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        commandBox.classList.add('is-dragover');
-      });
-    });
-
-    ['dragleave', 'drop'].forEach(evt => {
-      commandBox.addEventListener(evt, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        commandBox.classList.remove('is-dragover');
-      });
-    });
-
-    commandBox.addEventListener('drop', (e) => {
-      const files = e.dataTransfer && e.dataTransfer.files;
-      if (files && files[0]) {
-        extractTextFromPdfFile(files[0]);
-      }
-    });
-
-    btnClearX.addEventListener('click', () => {
-      if (isClearingText) return;
-      hideNotice();
-      const text = editalInput.value;
-      clearPdfAttachment();
-
-      if (!text) {
-        syncClearButton();
-        return;
-      }
-
-      const inputRect = editalInput.getBoundingClientRect();
-      clearAnimDuration = 280;
-      clearAnimStart = performance.now();
-      isClearingText = true;
-      SoundFX.playDustSweep(0.28);
-
-      btnClearX.classList.remove('is-active');
-      for (let i = 0; i < 48; i++) {
-        const t = i / 48;
-        dustParticles.push({
-          x: inputRect.left + inputRect.width * 0.7 * (1 - t) + (Math.random() - 0.5) * 18,
-          y: inputRect.top + 18 + (Math.random() - 0.5) * 12,
-          vx: -Math.random() * 1.5 - 0.4,
-          vy: (Math.random() - 0.65) * 1.3,
-          size: Math.random() * 2 + 1,
-          color: Math.random() > 0.45 ? '#2563eb' : '#0f172a',
-          bornAt: clearAnimStart + t * 180,
-          life: 1,
-          decay: 0.025
-        });
-      }
-
-      setTimeout(() => {
-        editalInput.value = '';
-        editalInput.style.clipPath = 'inset(0 0% 0 0)';
-        autoResizeTextarea();
-        isClearingText = false;
-        editalInput.focus();
-      }, clearAnimDuration);
-    });
-
-    editalInput.addEventListener('input', () => {
-      hideNotice();
-      autoResizeTextarea();
-      syncClearButton();
-    });
-
-    editalInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        iniciarAnaliseEdital();
-      }
-    });
-
-    /* =========================================================================
-       5. MODEL ARMOR CLIENT, COTA & COMUNICAÇÃO COM /api/analyze
-       ========================================================================= */
-    const resultWrapper = document.getElementById('resultWrapper');
-    const resultDock = document.getElementById('resultDock');
-    const resultDockTitle = document.getElementById('resultDockTitle');
-    const destinationSection = document.getElementById('destinationSection');
-    const resultSubjectBadge = document.getElementById('resultSubjectBadge');
-    const resultSummaryBody = document.getElementById('resultSummaryBody');
-    const resultActionsCluster = document.getElementById('resultActionsCluster');
-    const btnCopyNormal = document.getElementById('btnCopyNormal');
-    const btnDownloadPdf = document.getElementById('btnDownloadPdf');
-    const quotaPill = document.getElementById('quotaPill');
-    const quotaLabel = document.getElementById('quotaLabel');
-    const btnGenerateLabel = document.getElementById('btnGenerateLabel');
-
-    function formatQuotaCountdown(totalSec) {
-      const sec = Math.max(0, Math.floor(totalSec));
-      if (sec >= 3600) {
-        const h = Math.floor(sec / 3600);
-        const m = Math.floor((sec % 3600) / 60);
-        return `${h}h ${String(m).padStart(2, '0')}m`;
-      }
-      const m = Math.floor(sec / 60);
-      const s = sec % 60;
-      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
-
-    const ModelArmorClient = (() => {
-      const MAX_TEXT_LEN = 26000;
-      const MIN_TEXT_LEN = 3;
-      const requestTimestamps = [];
-      const dailyTimestamps = [];
-      const MAX_REQ_PER_MIN = 6;
-      let isUserLoggedIn = false;
-      const MINUTE_MS = 60 * 1000;
-      const DAY_MS = 24 * 60 * 60 * 1000;
-      let serverOverrideUntil = 0;
-      let serverOverrideReason = '';
-      let serverDailyRemaining = null;
-      let serverDailyLimit = null;
-
-      function getDailyLimit() {
-        if (serverDailyLimit !== null) return serverDailyLimit;
-        return 25;
-      }
-
-      function setAuthenticated(flag) {
-        isUserLoggedIn = Boolean(flag);
-        serverDailyRemaining = null;
-        serverDailyLimit = null;
-        serverOverrideUntil = 0;
-      }
-
-      const INJECTION_PATTERNS = [
-        /ignore\s+(all\s+)?(previous|prior|above|system)\s+(instructions?|rules?|prompts?)/i,
-        /disregard\s+(all\s+)?(previous|prior|system)/i,
-        /you\s+are\s+now\s+(a|an|in)\s+(dan|developer|admin|root|unrestricted|jailbreak)/i,
-        /system\s*prompt|reveal\s+(your|the)\s+(prompt|instructions|rules|api\s*key|secret|env)/i,
-        /(ignore|esqueça|desconsidere|apague)\s+(todas?\s+as\s+)?(instruções|regras|comandos|diretrizes)\s*(anteriores|acima|do\s+sistema)?/i,
-        /(revele|mostre|exiba|imprima|vaze)\s+(o\s+)?(prompt|sistema|chave|api|segredo|instrução)/i,
-        /<\s*\/?\s*(system|assistant|user|instruction|prompt|edital_content)\s*>/i
-      ];
-
-      function sanitizeInput(raw) {
-        if (typeof raw !== 'string') return '';
-        return raw
-          .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
-      }
-
-      function pruneTimestamps(now = Date.now()) {
-        while (requestTimestamps.length > 0 && now - requestTimestamps[0] >= MINUTE_MS) requestTimestamps.shift();
-        while (dailyTimestamps.length > 0 && now - dailyTimestamps[0] >= DAY_MS) dailyTimestamps.shift();
-      }
-
-      function getQuotaStatus() {
-        const now = Date.now();
-        pruneTimestamps(now);
-
-        const maxDay = getDailyLimit();
-        const localDailyRem = Math.max(0, maxDay - dailyTimestamps.length);
-        const dailyRemaining = serverDailyRemaining !== null
-          ? Math.min(localDailyRem, serverDailyRemaining)
-          : localDailyRem;
-        const minuteRemaining = Math.max(0, MAX_REQ_PER_MIN - requestTimestamps.length);
-
-        if (serverOverrideUntil > now) {
-          return {
-            blocked: true,
-            reason: serverOverrideReason || 'minute',
-            waitSec: Math.max(1, Math.ceil((serverOverrideUntil - now) / 1000)),
-            minuteRemaining: 0,
-            dailyRemaining,
-            dailyLimit: maxDay
-          };
-        }
-
-        if (dailyRemaining <= 0) {
-          const oldestDay = dailyTimestamps[0] || now;
-          return {
-            blocked: true,
-            reason: 'daily',
-            waitSec: Math.max(1, Math.ceil((DAY_MS - (now - oldestDay)) / 1000)),
-            minuteRemaining: 0,
-            dailyRemaining: 0,
-            dailyLimit: maxDay
-          };
-        }
-
-        if (minuteRemaining <= 0) {
-          const oldestMin = requestTimestamps[0] || now;
-          return {
-            blocked: true,
-            reason: 'minute',
-            waitSec: Math.max(1, Math.ceil((MINUTE_MS - (now - oldestMin)) / 1000)),
-            minuteRemaining: 0,
-            dailyRemaining,
-            dailyLimit: maxDay
-          };
-        }
-
-        return {
-          blocked: false,
-          reason: null,
-          waitSec: 0,
-          minuteRemaining,
-          dailyRemaining,
-          dailyLimit: maxDay
-        };
-      }
-
-      function recordRequest() {
-        const now = Date.now();
-        pruneTimestamps(now);
-        requestTimestamps.push(now);
-        dailyTimestamps.push(now);
-        if (serverDailyRemaining !== null && serverDailyRemaining > 0) {
-          serverDailyRemaining -= 1;
-        }
-      }
-
-      function syncFromServerQuota(quota, retryAfterSec) {
-        if (!quota || typeof quota !== 'object') return;
-        if (typeof quota.dailyLimit === 'number') {
-          serverDailyLimit = quota.dailyLimit;
-        }
-        if (typeof quota.dailyRemaining === 'number') {
-          serverDailyRemaining = Math.max(0, quota.dailyRemaining);
-        }
-        const wait = Number(retryAfterSec || quota.resetInSec || 0);
-        if (wait > 0 && (quota.minuteRemaining === 0 || quota.dailyRemaining === 0)) {
-          serverOverrideUntil = Date.now() + wait * 1000;
-          serverOverrideReason = quota.dailyRemaining === 0 ? 'daily' : 'minute';
-        }
-      }
-
-      function validate(rawText, pdfObj) {
-        const cleanTyped = sanitizeInput(rawText);
-        const combined = pdfObj
-          ? `${cleanTyped ? `Observação do candidato: ${cleanTyped}\n` : ''}Arquivo PDF: ${pdfObj.name}\nConteúdo extraído: ${pdfObj.extractedText}`
-          : cleanTyped;
-
-        const clean = sanitizeInput(combined).slice(0, MAX_TEXT_LEN);
-
-        if (clean.length < MIN_TEXT_LEN) {
-          return {
-            ok: false,
-            code: 'INVALID_LENGTH',
-            message: 'Digite o nome do edital, cole um link ou anexe o PDF.'
-          };
-        }
-
-        for (const pattern of INJECTION_PATTERNS) {
-          if (pattern.test(clean.slice(0, 4000))) {
-            return {
-              ok: false,
-              code: 'MODEL_ARMOR_BLOCKED',
-              message: 'Solicitação bloqueada pela proteção (Model Armor). Insira apenas dados de um edital.'
-            };
-          }
-        }
-
-        const rateStatus = getQuotaStatus();
-        if (rateStatus.blocked) {
-          const waitLabel = formatQuotaCountdown(rateStatus.waitSec);
-          return {
-            ok: false,
-            code: 'RATE_LIMITED',
-            message: rateStatus.reason === 'daily'
-              ? `Limite diário da conta atingido (${rateStatus.dailyLimit}/dia). Libera em ${waitLabel}.`
-              : `Limite por minuto atingido. Aguarde ${waitLabel}.`
-          };
-        }
-
-        const displayTitle = pdfObj
-          ? pdfObj.name
-          : (cleanTyped.length > 36 ? cleanTyped.slice(0, 36) + '...' : cleanTyped);
-
-        return { ok: true, clean, displayTitle, isPdf: Boolean(pdfObj) };
-      }
-
-      function generateIntegrityHeader(cleanPayload) {
-        const ts = Date.now().toString(36);
-        let hash = 2166136261;
-        const sample = cleanPayload.slice(0, 120).toLowerCase();
-        const payload = `${sample}|${cleanPayload.length}|${ts}|krisis-v1`;
-        for (let i = 0; i < payload.length; i++) {
-          hash ^= payload.charCodeAt(i);
-          hash = Math.imul(hash, 16777619);
-        }
-        return `${ts}.${(hash >>> 0).toString(16)}`;
-      }
-
-      return {
-        validate,
-        sanitizeInput,
-        generateIntegrityHeader,
-        getQuotaStatus,
-        recordRequest,
-        syncFromServerQuota,
-        setAuthenticated
-      };
-    })();
-
-    let currentGeneratedSummary = '';
-    let currentAnalysisData = null;
-    let isSubmitting = false;
-
-    function updateQuotaUI() {
-      const status = ModelArmorClient.getQuotaStatus();
-      quotaPill.classList.remove('is-warning', 'is-cooldown');
-
-      if (status.blocked) {
-        quotaPill.classList.add('is-cooldown');
-        const timerStr = formatQuotaCountdown(status.waitSec);
-        quotaLabel.textContent = status.reason === 'daily'
-          ? `0/${status.dailyLimit} · ${timerStr}`
-          : `Pausa · ${timerStr}`;
-        btnGenerate.disabled = true;
-        btnGenerateLabel.textContent = timerStr;
-        return;
-      }
-
-      if (!isSubmitting) {
-        btnGenerate.disabled = false;
-        btnGenerateLabel.textContent = 'Analisar';
-      }
-
-      if (status.dailyRemaining <= 5 || status.minuteRemaining <= 1) {
-        quotaPill.classList.add('is-warning');
-      }
-
-      quotaLabel.textContent = `${status.dailyRemaining}/${status.dailyLimit} hoje`;
-    }
-
-    updateQuotaUI();
-    setInterval(updateQuotaUI, 1000);
-
-    const ALLOWED_FOCUS_VALUES = new Set([
-      'datas de inscrição, isenção, provas e resultados',
-      'número de vagas, cotas, remuneração e taxa de inscrição',
-      'requisitos de escolaridade, idade, documentação e etapas',
-      'conteúdo programático, matérias cobradas, pesos e redação'
-    ]);
-
-    function getSelectedFocuses() {
-      return Array.from(document.querySelectorAll('.focus-pill.active'))
-        .map(el => el.getAttribute('data-value'))
-        .filter(val => ALLOWED_FOCUS_VALUES.has(val));
-    }
-
-    function escapeHTML(str) {
-      return String(str || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function getStatusClass(statusRaw) {
-      const statusNorm = String(statusRaw || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (statusNorm.includes('abert') || statusNorm.includes('ativ')) return 'aberto';
-      if (statusNorm.includes('previst') || statusNorm.includes('autoriz') || statusNorm.includes('andamento')) return 'previsto';
-      if (statusNorm.includes('encerrad') || statusNorm.includes('fechad')) return 'encerrado';
-      return '';
-    }
-
-    function renderStructuredEdital(payload) {
-      const parsed = typeof payload === 'object' && payload !== null ? payload : null;
-
-      if (!parsed || !parsed.resumo) {
-        const safeFallback = typeof payload === 'string' ? payload : 'Não foi possível estruturar os dados deste edital.';
-        resultSummaryBody.textContent = safeFallback;
-        return safeFallback;
-      }
-
-      const statusRaw = String(parsed.status || 'Consultar Cronograma').trim();
-      const statusClass = getStatusClass(statusRaw);
-
-      const cards = [];
-
-      if (parsed.datas) {
-        cards.push(`
-          <div class="analysis-metric metric-datas">
-            <div class="metric-header"><span class="metric-label">Datas & Prazos</span></div>
-            <div class="metric-value">${escapeHTML(parsed.datas)}</div>
-          </div>
-        `);
-      }
-
-      if (parsed.vagas) {
-        cards.push(`
-          <div class="analysis-metric metric-vagas">
-            <div class="metric-header"><span class="metric-label">Vagas, Salário & Taxa</span></div>
-            <div class="metric-value">${escapeHTML(parsed.vagas)}</div>
-          </div>
-        `);
-      }
-
-      if (parsed.requisitos) {
-        cards.push(`
-          <div class="analysis-metric metric-requisitos">
-            <div class="metric-header"><span class="metric-label">Requisitos & Etapas</span></div>
-            <div class="metric-value">${escapeHTML(parsed.requisitos)}</div>
-          </div>
-        `);
-      }
-
-      if (parsed.provas) {
-        cards.push(`
-          <div class="analysis-metric metric-provas">
-            <div class="metric-header"><span class="metric-label">Provas & Conteúdo</span></div>
-            <div class="metric-value">${escapeHTML(parsed.provas)}</div>
-          </div>
-        `);
-      }
-
-      const checklistHtml = parsed.checklist ? `
-        <div class="checklist-box">
-          <div class="checklist-header">
-            <span class="checklist-title">Checklist de Ação Rápida</span>
-            <span class="checklist-badge">${escapeHTML(parsed.bancaOrgao || 'Guia do Candidato')}</span>
-          </div>
-          <p class="checklist-text">${escapeHTML(parsed.checklist)}</p>
-        </div>
-      ` : '';
-
-      resultSummaryBody.innerHTML = `
-        <div class="structured-analysis">
-          <div class="overview-row">
-            <div class="status-strip">
-              <span class="status-tag ${statusClass}">${escapeHTML(statusRaw)}</span>
-              ${parsed.escolaridade ? `<span class="status-tag">${escapeHTML(parsed.escolaridade)}</span>` : ''}
-            </div>
-            <p class="analysis-overview">${escapeHTML(parsed.resumo)}</p>
-          </div>
-          ${cards.length > 0 ? `<div class="analysis-grid">${cards.join('')}</div>` : ''}
-          ${checklistHtml}
-        </div>
-      `;
-
-      return [
-        `Edital: ${parsed.titulo || ''} (${statusRaw})`,
-        `Resumo: ${parsed.resumo}`,
-        parsed.datas ? `Datas & Prazos: ${parsed.datas}` : '',
-        parsed.vagas ? `Vagas & Remuneração: ${parsed.vagas}` : '',
-        parsed.requisitos ? `Requisitos: ${parsed.requisitos}` : '',
-        parsed.provas ? `Provas & Conteúdo: ${parsed.provas}` : '',
-        parsed.checklist ? `Checklist de Ação: ${parsed.checklist}` : ''
-      ].filter(Boolean).join('\n\n');
-    }
-
-    async function fetchEditalAnalysis(cleanContent, focuses, isPdf) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 24000);
-
-      try {
-        const reqHeaders = {
-          'Content-Type': 'application/json',
-          'X-Client-Integrity': ModelArmorClient.generateIntegrityHeader(cleanContent)
-        };
-        if (currentSession && currentSession.access_token) {
-          reqHeaders['Authorization'] = `Bearer ${currentSession.access_token}`;
-        }
-
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: reqHeaders,
-          body: JSON.stringify({
-            target: cleanContent,
-            focuses,
-            isPdf
-          }),
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-        const rawText = await response.text();
-        let data = null;
-        try {
-          data = JSON.parse(rawText);
-        } catch (_) {
-          throw new Error(`Erro HTTP ${response.status} no servidor. Verifique api/analyze.js.`);
-        }
-
-        if (!response.ok || !data || data.ok === false) {
-          if (data && data.quota) {
-            ModelArmorClient.syncFromServerQuota(data.quota, data.quota.resetInSec);
-            updateQuotaUI();
-          }
-          const err = new Error(data?.message || `Erro HTTP ${response.status} ao analisar o edital.`);
-          err.code = data?.code || `HTTP_${response.status}`;
-          throw err;
-        }
-
-        if (data && data.quota) {
-          ModelArmorClient.syncFromServerQuota(data.quota, 0);
-          updateQuotaUI();
-        }
-
-        return data.analysis;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        if (err.name === 'AbortError') {
-          throw new Error('Tempo limite excedido ao processar o edital. Tente novamente.');
-        }
-        throw err;
-      }
-    }
-
-    /* =========================================================================
-       6. EXPORTAÇÃO DO PDF EDITORIAL COLORIDO COM CARDS E FONTES DIVERSAS
-       ========================================================================= */
-    function buildEditorialPdfHtml(data) {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('pt-BR');
-      const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const statusRaw = String(data.status || 'Consultar Cronograma').trim();
-      const statusClass = getStatusClass(statusRaw);
-
-      return `
-        <div class="pdf-sheet" id="pdfDocumentRoot">
-          <div class="pdf-top-stripe"></div>
-          <div class="pdf-inner">
-            <div class="pdf-brand-header">
-              <div class="pdf-brand-logo">Krisis.</div>
-              <div class="pdf-brand-meta">
-                <div>DOSSIÊ ESTRUTURADO DE EDITAL</div>
-                <div>Gerado em ${escapeHTML(dateStr)} às ${escapeHTML(timeStr)}</div>
-              </div>
-            </div>
-
-            <div class="pdf-hero-banner">
-              <div class="pdf-badges-row">
-                <span class="pdf-badge pdf-badge-status ${statusClass}">${escapeHTML(statusRaw)}</span>
-                ${data.escolaridade ? `<span class="pdf-badge pdf-badge-neutral">${escapeHTML(data.escolaridade)}</span>` : ''}
-              </div>
-              <div class="pdf-doc-title">${escapeHTML(data.titulo || 'Resumo Executivo do Edital')}</div>
-              <div class="pdf-doc-org">${escapeHTML(data.bancaOrgao || 'Guia Estruturado do Candidato')}</div>
-              <div class="pdf-doc-summary">${escapeHTML(data.resumo || '')}</div>
-            </div>
-
-            <div class="pdf-cards-grid">
-              <div class="pdf-card pdf-card-datas">
-                <div class="pdf-card-kicker">01 · Cronograma</div>
-                <div class="pdf-card-heading">Datas & Prazos</div>
-                <div class="pdf-card-body">${escapeHTML(data.datas || 'Consulte o cronograma oficial.')}</div>
-              </div>
-
-              <div class="pdf-card pdf-card-vagas">
-                <div class="pdf-card-kicker">02 · Oportunidades</div>
-                <div class="pdf-card-heading">Vagas, Salário & Taxa</div>
-                <div class="pdf-card-body">${escapeHTML(data.vagas || 'Consulte o quadro de vagas no edital.')}</div>
-              </div>
-
-              <div class="pdf-card pdf-card-requisitos">
-                <div class="pdf-card-kicker">03 · Habilitação</div>
-                <div class="pdf-card-heading">Requisitos & Etapas</div>
-                <div class="pdf-card-body">${escapeHTML(data.requisitos || 'Verifique os requisitos básicos do cargo.')}</div>
-              </div>
-
-              <div class="pdf-card pdf-card-provas">
-                <div class="pdf-card-kicker">04 · Avaliação</div>
-                <div class="pdf-card-heading">Provas & Conteúdo</div>
-                <div class="pdf-card-body">${escapeHTML(data.provas || 'Consulte o conteúdo programático.')}</div>
-              </div>
-            </div>
-
-            ${data.checklist ? `
-              <div class="pdf-checklist-panel">
-                <div class="pdf-checklist-header">
-                  <div class="pdf-checklist-title">Checklist de Ação Imediata</div>
-                  <div class="pdf-checklist-tag">PRÓXIMOS PASSOS</div>
-                </div>
-                <div class="pdf-checklist-body">${escapeHTML(data.checklist)}</div>
-              </div>
-            ` : ''}
-
-            <div class="pdf-footer-bar">
-              <span>KRISIS · DISCERNIMENTO SOBRE QUALQUER EDITAL</span>
-              <span>CONFERIR SEMPRE O DOCUMENTO OFICIAL DA BANCA</span>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    async function downloadStructuredPdf() {
-      if (!currentAnalysisData) return;
-      if (!window.html2pdf) {
-        showNotice('Gerador de PDF ainda carregando. Tente novamente em 2 segundos.');
-        return;
-      }
-
-      const span = btnDownloadPdf.querySelector('span');
-      const originalLabel = span.textContent;
-      btnDownloadPdf.disabled = true;
-      span.textContent = 'Gerando PDF...';
-
-      const staging = document.getElementById('pdfExportStaging');
-      staging.innerHTML = buildEditorialPdfHtml(currentAnalysisData);
-      const element = document.getElementById('pdfDocumentRoot');
-
-      const safeFilename = (currentAnalysisData.titulo || 'edital-krisis')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .slice(0, 48) || 'edital-krisis';
-
-      try {
-        if (document.fonts && document.fonts.ready) {
-          await document.fonts.ready;
-        }
-        await html2pdf()
-          .set({
-            margin: 0,
-            filename: `${safeFilename}-krisis.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          })
-          .from(element)
-          .save();
-      } catch (_) {
-        showNotice('Não foi possível gerar o PDF agora. Tente novamente.');
-      } finally {
-        staging.innerHTML = '';
-        btnDownloadPdf.disabled = false;
-        span.textContent = originalLabel;
-      }
-    }
-
-    btnDownloadPdf.addEventListener('click', downloadStructuredPdf);
-
-    /* =========================================================================
-       7. ANIMAÇÃO ÁGIL DO AVIÃO DE PAPEL & DISPARO
-       ========================================================================= */
-    const planeState = {
-      active: false,
-      phase: 'idle',
-      x: 0,
-      y: 0,
-      originX: 0,
-      originY: 0,
-      docX: 0,
-      docY: 0,
-      angle: 0,
-      scale: 1,
-      stretchX: 1,
-      stretchY: 1,
-      opacity: 1,
-      startTime: 0,
-      detachDuration: 220,
-      duration: 1450,
-      p0: { x: 0, y: 0 },
-      p3: { x: 0, y: 0 },
-      trail: []
-    };
-
-    function easeInOutSine(t) {
-      return -(Math.cos(Math.PI * t) - 1) / 2;
-    }
-
-    function easeInOutCubic(t) {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    }
-
-    function cubicBezierPoint(t, p0, p1, p2, p3) {
-      const u = 1 - t;
-      const tt = t * t;
-      const uu = u * u;
-      return {
-        x: uu * u * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + tt * t * p3.x,
-        y: uu * u * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + tt * t * p3.y
-      };
-    }
-
-    function cubicBezierTangent(t, p0, p1, p2, p3) {
-      const u = 1 - t;
-      return {
-        x: 3 * u * u * (p1.x - p0.x) + 6 * u * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x),
-        y: 3 * u * u * (p1.y - p0.y) + 6 * u * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y)
-      };
-    }
-
-    function lerpAngle(current, target, factor) {
-      let diff = target - current;
-      while (diff > Math.PI) diff -= Math.PI * 2;
-      while (diff < -Math.PI) diff += Math.PI * 2;
-      return current + diff * factor;
-    }
-
-    function smoothScrollToTarget(targetY, durationMs) {
-      const startY = window.scrollY;
-      const diff = targetY - startY;
-      const start = performance.now();
-
-      function step(now) {
-        const elapsed = now - start;
-        const progress = Math.min(1, elapsed / durationMs);
-        window.scrollTo(0, startY + diff * easeInOutSine(progress));
-        if (progress < 1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    }
-
-    function iniciarAnaliseEdital(bypassAuthGate = false) {
-      hideNotice();
-      const rawEntrada = editalInput.value;
-      if ((!rawEntrada || !rawEntrada.trim()) && !attachedPdfData) {
-        editalInput.focus();
-        return;
-      }
-      if (isSubmitting) return;
-
-      // Exige login/criação de conta após o usuário clicar em Analisar
-      if (!bypassAuthGate && !currentSession) {
-        openAuthModal(true);
-        return;
-      }
-
-      const validation = ModelArmorClient.validate(rawEntrada, attachedPdfData);
-      if (!validation.ok) {
-        currentGeneratedSummary = '';
-        currentAnalysisData = null;
-        resultSubjectBadge.textContent = 'Aviso';
-        resultDockTitle.textContent = validation.code === 'MODEL_ARMOR_BLOCKED'
-          ? 'Bloqueado pelo Model Armor'
-          : validation.code === 'RATE_LIMITED'
-            ? 'Limite temporário atingido'
-            : 'Entrada inválida';
-        resultActionsCluster.style.display = 'none';
-        resultSummaryBody.textContent = validation.message;
-
-        resultWrapper.classList.add('is-rendered');
-        requestAnimationFrame(() => resultWrapper.classList.add('is-visible'));
-
-        const destRect = destinationSection.getBoundingClientRect();
-        smoothScrollToTarget(Math.max(0, window.scrollY + destRect.top - (H * 0.25)), 550);
-        return;
-      }
-
-      isSubmitting = true;
-      ModelArmorClient.recordRequest();
-      updateQuotaUI();
-
-      const selectedFocuses = getSelectedFocuses();
-      currentGeneratedSummary = '';
-      currentAnalysisData = null;
-      resultSubjectBadge.textContent = validation.displayTitle;
-      resultDockTitle.textContent = 'Decupando edital...';
-      resultActionsCluster.style.display = 'none';
-      resultSummaryBody.innerHTML = `
-        <div class="result-skeleton">
-          <div class="skeleton-line" style="width: 96%;"></div>
-          <div class="skeleton-line" style="width: 89%;"></div>
-          <div class="skeleton-line" style="width: 93%;"></div>
-          <div class="skeleton-line" style="width: 72%;"></div>
-        </div>
-      `;
-
-      fetchEditalAnalysis(validation.clean, selectedFocuses, validation.isPdf)
-        .then((analysisObj) => {
-          currentAnalysisData = analysisObj;
-          currentGeneratedSummary = renderStructuredEdital(analysisObj);
-          resultDockTitle.textContent = analysisObj.titulo || 'Resumo do Edital';
-          btnCopyNormal.querySelector('span').textContent = 'Copiar resumo';
-          resultActionsCluster.style.display = 'inline-flex';
-        })
-        .catch((err) => {
-          currentGeneratedSummary = '';
-          currentAnalysisData = null;
-          resultDockTitle.textContent = err.code === 'OUT_OF_CONTEXT' || err.code === 'MODEL_ARMOR_BLOCKED'
-            ? 'Solicitação não permitida'
-            : 'Não foi possível concluir a leitura';
-          resultSummaryBody.textContent = err.message || 'Ocorreu uma falha temporária ao analisar o edital.';
-          resultActionsCluster.style.display = 'none';
-        });
-
-      const iconRect = btnPlaneIcon.getBoundingClientRect();
-      btnPlaneIcon.classList.add('is-launched');
-
-      editalInput.value = '';
-      autoResizeTextarea();
-      clearPdfAttachment();
-      syncClearButton();
-
-      resultWrapper.classList.remove('is-visible');
-      resultWrapper.classList.add('is-rendered');
-      requestAnimationFrame(() => resultWrapper.classList.add('is-visible'));
-
-      const detachDuration = 220;
-      const flightDuration = 1450;
-      SoundFX.playAirWhoosh((detachDuration + flightDuration) / 1000);
-
-      const destRect = destinationSection.getBoundingClientRect();
-      const scrollOffset = W <= 680 ? H * 0.16 : H * 0.30;
-      const absoluteDestTop = Math.max(0, window.scrollY + destRect.top - scrollOffset);
-      smoothScrollToTarget(absoluteDestTop, detachDuration + flightDuration);
-
-      const startX = iconRect.left + iconRect.width / 2;
-      const startY = iconRect.top + iconRect.height / 2;
-
-      planeState.active = true;
-      planeState.phase = 'detaching';
-      planeState.startTime = performance.now();
-      planeState.detachDuration = detachDuration;
-      planeState.duration = flightDuration;
-      planeState.originX = startX;
-      planeState.originY = startY;
-      planeState.x = startX;
-      planeState.y = startY;
-      planeState.angle = 0;
-      planeState.stretchX = 1;
-      planeState.stretchY = 1;
-      planeState.trail = [];
-
-      const finalDockX = Math.max(22, W * 0.5 - 380);
-      planeState.p0 = { x: startX + 20, y: startY };
-      planeState.p3 = { x: finalDockX, y: H * 0.45 };
-
-      setTimeout(() => {
-        const dockRect = resultDock.getBoundingClientRect();
-        const isMobile = W <= 680;
-        const outsideX = isMobile ? dockRect.left + 24 : Math.max(22, dockRect.left - 22);
-        const outsideY = isMobile ? Math.max(24, dockRect.top - 14) : dockRect.top + dockRect.height * 0.5;
-
-        planeState.docX = outsideX + window.scrollX;
-        planeState.docY = outsideY + window.scrollY;
-        planeState.x = outsideX;
-        planeState.y = outsideY;
-        planeState.angle = 0;
-        planeState.scale = isMobile ? 0.95 : 1.06;
-        planeState.stretchX = 1;
-        planeState.stretchY = 1;
-        planeState.phase = 'docked-static';
-
-        btnPlaneIcon.classList.remove('is-launched');
-        isSubmitting = false;
-        updateQuotaUI();
-      }, detachDuration + flightDuration);
-    }
-
-    btnGenerate.addEventListener('click', () => iniciarAnaliseEdital(false));
-
-    document.querySelectorAll('.sample-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        hideNotice();
-        clearPdfAttachment();
-        editalInput.value = chip.getAttribute('data-sample');
-        autoResizeTextarea();
-        syncClearButton();
-        editalInput.focus();
-      });
-    });
-
-    document.querySelectorAll('.focus-pill').forEach(pill => {
-      pill.addEventListener('click', () => pill.classList.toggle('active'));
-    });
-
-    function copyTextToClipboard(text) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-      }
-      fallbackCopy(text);
-      return Promise.resolve();
-    }
-
-    function fallbackCopy(text) {
-      const temp = document.createElement('textarea');
-      temp.value = text;
-      temp.style.position = 'fixed';
-      temp.style.opacity = '0';
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand('copy');
-      document.body.removeChild(temp);
-    }
-
-    document.getElementById('btnCopyNormal').addEventListener('click', function () {
-      if (!currentGeneratedSummary) return;
-      copyTextToClipboard(currentGeneratedSummary);
-
-      const span = this.querySelector('span');
-      const prev = span.textContent;
-      span.textContent = 'Copiado ✓';
-      this.classList.add('is-copied');
-
-      setTimeout(() => {
-        span.textContent = prev;
-        this.classList.remove('is-copied');
-      }, 2000);
-    });
-
-    /* =========================================================================
-       8. LOOP DE RENDERIZAÇÃO DO CANVAS
-       ========================================================================= */
-    function drawPaperPlane(ctx, x, y, angle, scale, opacity, stretchX = 1, stretchY = 1) {
-      if (opacity <= 0.01) return;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle);
-      ctx.scale(scale * stretchX, scale * stretchY);
-      ctx.globalAlpha = opacity;
-
-      ctx.shadowColor = 'rgba(17, 24, 39, 0.22)';
-      ctx.shadowBlur = 10;
-      ctx.shadowOffsetY = 5;
-
-      ctx.beginPath();
-      ctx.moveTo(15, 0);
-      ctx.lineTo(-12, -10.5);
-      ctx.lineTo(-7.5, 0);
-      ctx.closePath();
-      ctx.fillStyle = '#1d4ed8';
-      ctx.fill();
-
-      ctx.shadowColor = 'transparent';
-
-      ctx.beginPath();
-      ctx.moveTo(15, 0);
-      ctx.lineTo(-12, 10.5);
-      ctx.lineTo(-7.5, 0);
-      ctx.closePath();
-      ctx.fillStyle = '#2563eb';
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(15, 0);
-      ctx.lineTo(-7.5, 0);
-      ctx.lineTo(-9.5, 4.5);
-      ctx.closePath();
-      ctx.fillStyle = '#1e3a8a';
-      ctx.fill();
-
-      ctx.lineWidth = 0.9;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.beginPath();
-      ctx.moveTo(15, 0);
-      ctx.lineTo(-12, -10.5);
-      ctx.lineTo(-7.5, 0);
-      ctx.lineTo(-12, 10.5);
-      ctx.closePath();
-      ctx.stroke();
-
-      ctx.restore();
-    }
-
-    function drawViscousTether(ctx, ox, oy, px, py, progress) {
-      if (progress <= 0 || progress >= 1) return;
-      const alpha = Math.pow(1 - progress, 1.5) * 0.65;
-      if (alpha <= 0.02) return;
-
-      const midX = (ox + px) * 0.5;
-      const midY = (oy + py) * 0.5;
-      const neckRadius = Math.max(0.6, (1 - progress) * 4.5);
-
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#93c5fd';
-      ctx.beginPath();
-      ctx.moveTo(ox, oy - neckRadius * 1.3);
-      ctx.quadraticCurveTo(midX, midY - neckRadius * 0.35, px - 6, py - neckRadius * 0.8);
-      ctx.lineTo(px - 6, py + neckRadius * 0.8);
-      ctx.quadraticCurveTo(midX, midY + neckRadius * 0.35, ox, oy + neckRadius * 1.3);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function renderFrame(now) {
-      liquidCtx.clearRect(0, 0, W, H);
-      for (let i = liquidRipples.length - 1; i >= 0; i--) {
-        const r = liquidRipples[i];
-        r.radius += r.speed;
-        r.speed *= 0.986;
-        const progress = r.radius / r.maxRadius;
-        const alpha = r.alpha * Math.pow(1 - progress, 1.85);
-
-        if (progress >= 1 || alpha <= 0.004) {
-          liquidRipples.splice(i, 1);
-          continue;
-        }
-
-        liquidCtx.save();
-        liquidCtx.translate(r.x, r.y);
-        liquidCtx.rotate(r.rotation);
-        liquidCtx.scale(r.stretchX, r.stretchY);
-
-        for (let ring = 0; ring < r.rings; ring++) {
-          const rad = r.radius - ring * r.ringGap;
-          if (rad <= 4) continue;
-          const ringAlpha = ring === 0 ? alpha : alpha * 0.52;
-
-          liquidCtx.beginPath();
-          for (let s = 0; s <= 42; s++) {
-            const theta = (s / 42) * Math.PI * 2;
-            const wobble = Math.sin(theta * r.wobbleFreq + r.phase + progress * 3) * r.wobbleAmp * (1 - progress);
-            const rr = rad + wobble;
-            const px = Math.cos(theta) * rr;
-            const py = Math.sin(theta) * rr;
-            if (s === 0) liquidCtx.moveTo(px, py);
-            else liquidCtx.lineTo(px, py);
-          }
-          liquidCtx.closePath();
-          liquidCtx.strokeStyle = ring === 0
-            ? `rgba(29, 78, 216, ${ringAlpha})`
-            : `rgba(15, 118, 110, ${ringAlpha})`;
-          liquidCtx.lineWidth = (ring === 0 ? 1.5 : 1.05) * (1 - progress * 0.45);
-          liquidCtx.stroke();
-        }
-        liquidCtx.restore();
-      }
-
-      stageCtx.clearRect(0, 0, W, H);
-
-      if (isClearingText) {
-        const cp = Math.min(1, (now - clearAnimStart) / clearAnimDuration);
-        editalInput.style.clipPath = `inset(0 ${(easeInOutCubic(cp) * 100).toFixed(2)}% 0 0)`;
-      }
-
-      for (let i = dustParticles.length - 1; i >= 0; i--) {
-        const p = dustParticles[i];
-        if (now < p.bornAt) continue;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy -= 0.015;
-        p.life -= p.decay;
-        if (p.life <= 0) {
-          dustParticles.splice(i, 1);
-          continue;
-        }
-        stageCtx.globalAlpha = p.life;
-        stageCtx.fillStyle = p.color;
-        stageCtx.fillRect(p.x, p.y, p.size, p.size);
-      }
-      stageCtx.globalAlpha = 1;
-
-      if (planeState.active) {
-        const isMobile = W <= 680;
-        if (planeState.phase === 'detaching') {
-          const dt = Math.min(1, (now - planeState.startTime) / planeState.detachDuration);
-          const pull = Math.pow(dt, 1.8);
-          const snap = dt > 0.78 ? Math.sin(((dt - 0.78) / 0.22) * Math.PI) * 0.2 : 0;
-
-          planeState.x = planeState.originX + pull * 20;
-          planeState.y = planeState.originY - Math.sin(dt * Math.PI) * 2;
-          planeState.angle = -Math.sin(dt * Math.PI) * 0.06;
-          planeState.scale = 1 + pull * 0.14;
-          planeState.stretchX = 1 + Math.sin(dt * Math.PI * 0.85) * 0.36 - snap * 0.35;
-          planeState.stretchY = 1 - Math.sin(dt * Math.PI * 0.85) * 0.2 + snap * 0.2;
-          planeState.opacity = 1;
-
-          drawViscousTether(stageCtx, planeState.originX, planeState.originY, planeState.x, planeState.y, dt);
-
-          if (dt >= 1) {
-            planeState.phase = 'open-flight';
-            planeState.startTime = now;
-            planeState.p0 = { x: planeState.x, y: planeState.y };
-            planeState.stretchX = 1;
-            planeState.stretchY = 1;
-          }
-        } else if (planeState.phase === 'open-flight') {
-          const t = Math.min(1, (now - planeState.startTime) / planeState.duration);
-          const ease = easeInOutSine(t);
-          const dockRect = resultDock.getBoundingClientRect();
-          const targetX = dockRect.width > 0
-            ? (isMobile ? dockRect.left + 24 : Math.max(22, dockRect.left - 22))
-            : planeState.p3.x;
-          const targetY = dockRect.width > 0
-            ? (isMobile ? Math.max(24, dockRect.top - 14) : dockRect.top + dockRect.height * 0.5)
-            : planeState.p3.y;
-
-          let pt, tan;
-          if (ease < 0.46) {
-            const u = ease / 0.46;
-            const a0 = planeState.p0;
-            const a1 = { x: a0.x + (W - a0.x) * 0.45, y: a0.y + H * 0.02 };
-            const a2 = { x: W + 30, y: a0.y + H * 0.08 };
-            const a3 = { x: W + 90, y: a0.y + H * 0.13 };
-            pt = cubicBezierPoint(u, a0, a1, a2, a3);
-            tan = cubicBezierTangent(u, a0, a1, a2, a3);
-          } else {
-            const u = (ease - 0.46) / 0.54;
-            const b0 = { x: -90, y: Math.max(80, targetY - H * 0.20) };
-            const b1 = { x: targetX * 0.25, y: Math.max(100, targetY - H * 0.12) };
-            const b2 = { x: targetX * 0.68, y: targetY - H * 0.02 };
-            const b3 = { x: targetX, y: targetY };
-            pt = cubicBezierPoint(u, b0, b1, b2, b3);
-            tan = cubicBezierTangent(u, b0, b1, b2, b3);
-          }
-
-          if (Math.hypot(tan.x, tan.y) > 0.01) {
-            const rawAngle = Math.atan2(tan.y, tan.x);
-            planeState.angle = lerpAngle(planeState.angle, Math.max(-0.45, Math.min(0.45, rawAngle)), 0.22);
-          }
-          if (t > 0.72) {
-            planeState.angle = lerpAngle(planeState.angle, 0, easeInOutSine((t - 0.72) / 0.28) * 0.4);
-          }
-
-          planeState.x = pt.x;
-          planeState.y = pt.y;
-          planeState.scale = (isMobile ? 1.05 : 1.18) - ease * 0.12;
-          if (Math.abs(ease - 0.46) > 0.02) {
-            planeState.trail.push({ x: planeState.x, y: planeState.y, life: 1 });
-          } else {
-            planeState.trail = [];
-          }
-        } else if (planeState.phase === 'docked-static') {
-          const dockRect = resultDock.getBoundingClientRect();
-          if (dockRect.width > 0) {
-            planeState.x = isMobile ? dockRect.left + 24 : Math.max(22, dockRect.left - 22);
-            planeState.y = isMobile ? Math.max(24, dockRect.top - 14) : dockRect.top + dockRect.height * 0.5;
-          } else {
-            planeState.x = planeState.docX - window.scrollX;
-            planeState.y = planeState.docY - window.scrollY;
-          }
-          planeState.angle = 0;
-          planeState.scale = isMobile ? 0.95 : 1.06;
-        }
-
-        for (let i = planeState.trail.length - 1; i >= 0; i--) {
-          planeState.trail[i].life -= 0.036;
-          if (planeState.trail[i].life <= 0) planeState.trail.splice(i, 1);
-        }
-
-        if (planeState.trail.length > 2) {
-          for (let i = 1; i < planeState.trail.length - 1; i++) {
-            const p0 = planeState.trail[i - 1], p1 = planeState.trail[i], p2 = planeState.trail[i + 1];
-            const ratio = i / planeState.trail.length;
-            stageCtx.beginPath();
-            stageCtx.moveTo((p0.x + p1.x) * 0.5, (p0.y + p1.y) * 0.5);
-            stageCtx.quadraticCurveTo(p1.x, p1.y, (p1.x + p2.x) * 0.5, (p1.y + p2.y) * 0.5);
-            stageCtx.strokeStyle = `rgba(29, 78, 216, ${ratio * p1.life * 0.32})`;
-            stageCtx.lineWidth = Math.max(1, ratio * 2.4);
-            stageCtx.lineCap = 'round';
-            stageCtx.stroke();
-          }
-        }
-
-        drawPaperPlane(stageCtx, planeState.x, planeState.y, planeState.angle, planeState.scale, planeState.opacity, planeState.stretchX, planeState.stretchY);
-      }
-
-      if (isFinePointer && customCursor.visible) {
-        const moveDx = customCursor.targetX - customCursor.lastTargetX;
-        const moveDy = customCursor.targetY - customCursor.lastTargetY;
-        customCursor.lastTargetX = customCursor.targetX;
-        customCursor.lastTargetY = customCursor.targetY;
-
-        customCursor.x += (customCursor.targetX - customCursor.x) * 0.62;
-        customCursor.y += (customCursor.targetY - customCursor.y) * 0.62;
-        customCursor.smoothDx += (moveDx - customCursor.smoothDx) * 0.28;
-        customCursor.smoothDy += (moveDy - customCursor.smoothDy) * 0.28;
-        const smoothSpeed = Math.hypot(customCursor.smoothDx, customCursor.smoothDy);
-
-        let targetTilt = 0;
-        if (smoothSpeed > 0.6) {
-          targetTilt = Math.max(-0.72, Math.min(0.72, customCursor.smoothDx * 0.045 + customCursor.smoothDy * 0.014));
-        }
-        customCursor.angle += (targetTilt - customCursor.angle) * (smoothSpeed > 0.6 ? 0.28 : 0.2);
-        customCursor.scale += ((customCursor.isHovering ? 1.15 : 1) - customCursor.scale) * 0.24;
-
-        if (smoothSpeed > 0.55) {
-          const lastPt = customCursor.trail[customCursor.trail.length - 1];
-          const trailX = lastPt ? lastPt.x + (customCursor.x - lastPt.x) * 0.62 : customCursor.x;
-          const trailY = lastPt ? lastPt.y + (customCursor.y - lastPt.y) * 0.62 : customCursor.y;
-          customCursor.trail.push({ x: trailX, y: trailY, life: 1 });
-          if (customCursor.trail.length > 12) customCursor.trail.shift();
-        }
-
-        for (let i = customCursor.trail.length - 1; i >= 0; i--) {
-          customCursor.trail[i].life -= 0.075;
-          if (customCursor.trail[i].life <= 0) customCursor.trail.splice(i, 1);
-        }
-
-        if (customCursor.trail.length > 2) {
-          for (let i = 1; i < customCursor.trail.length - 1; i++) {
-            const p0 = customCursor.trail[i - 1], p1 = customCursor.trail[i], p2 = customCursor.trail[i + 1];
-            const ratio = i / customCursor.trail.length;
-            stageCtx.beginPath();
-            stageCtx.moveTo((p0.x + p1.x) * 0.5, (p0.y + p1.y) * 0.5);
-            stageCtx.quadraticCurveTo(p1.x, p1.y, (p1.x + p2.x) * 0.5, (p1.y + p2.y) * 0.5);
-            stageCtx.strokeStyle = `rgba(29, 78, 216, ${ratio * p1.life * 0.28})`;
-            stageCtx.lineWidth = Math.max(1, ratio * 3.2);
-            stageCtx.lineCap = 'round';
-            stageCtx.stroke();
-          }
-        }
-
-        stageCtx.save();
-        stageCtx.translate(customCursor.x, customCursor.y);
-        stageCtx.rotate(customCursor.angle);
-        stageCtx.scale(customCursor.scale, customCursor.scale);
-
-        const grad = stageCtx.createLinearGradient(0, 0, 18, 22);
-        grad.addColorStop(0, '#1d4ed8');
-        grad.addColorStop(1, '#111827');
-
-        stageCtx.beginPath();
-        stageCtx.moveTo(0, 0);
-        stageCtx.lineTo(0, 20);
-        stageCtx.lineTo(5.5, 15.2);
-        stageCtx.lineTo(10.5, 22);
-        stageCtx.lineTo(13.5, 20.2);
-        stageCtx.lineTo(8.5, 13.5);
-        stageCtx.lineTo(15.5, 13.2);
-        stageCtx.closePath();
-
-        stageCtx.fillStyle = grad;
-        stageCtx.fill();
-        stageCtx.lineWidth = 1.4;
-        stageCtx.strokeStyle = '#ffffff';
-        stageCtx.stroke();
-        stageCtx.restore();
-      }
-
-      requestAnimationFrame(renderFrame);
-    }
-
-    requestAnimationFrame(renderFrame);
-  </script>
-</body>
-</html>
