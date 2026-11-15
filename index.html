@@ -421,7 +421,7 @@
     .hero-sub {
       font-size: clamp(0.95rem, 1.5vw, 1.06rem);
       color: var(--ink-body);
-      max-width: 490px;
+      max-width: 520px;
       line-height: 1.52;
       margin-bottom: 30px;
       font-weight: 400;
@@ -880,13 +880,6 @@
       color: var(--accent-emerald);
     }
     .sample-chip[data-theme="emerald"] .sample-dot { background: var(--accent-emerald); }
-
-    .sample-chip[data-theme="terracotta"]:hover {
-      background: var(--accent-terracotta-soft);
-      border-color: var(--accent-terracotta);
-      color: var(--accent-terracotta);
-    }
-    .sample-chip[data-theme="terracotta"] .sample-dot { background: var(--accent-terracotta); }
 
     .destination-section {
       width: 100%;
@@ -1657,7 +1650,7 @@
     <h1>Krisis.</h1>
 
     <p class="hero-sub">
-      Extraia prazos, vagas, requisitos e matérias de qualquer edital em segundos.
+      Anexe o PDF, cole o link oficial ou o texto completo do edital para extrair datas, vagas, requisitos e provas.
     </p>
 
     <div class="command-box" id="commandBox">
@@ -1683,14 +1676,14 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
           </svg>
-          <span>PDF</span>
+          <span>Anexar PDF</span>
         </button>
 
         <textarea
           id="editalInput"
           class="edital-textarea"
           rows="1"
-          placeholder="Nome do concurso, link ou texto do edital..."
+          placeholder="Ex: https://www.fuvest.br/... ou cole o texto do edital (ou anexe o PDF)"
           autocomplete="off"
           spellcheck="false"
         ></textarea>
@@ -1737,18 +1730,15 @@
     </div>
 
     <div class="quick-samples">
-      <span>Exemplos:</span>
-      <button type="button" class="sample-chip" data-theme="cobalt" data-sample="Edital ENEM 2026">
-        <span class="sample-dot"></span>ENEM
+      <span>Como enviar:</span>
+      <button type="button" class="sample-chip" data-theme="cobalt" id="chipOpenPdf">
+        <span class="sample-dot"></span>1. Anexar PDF
       </button>
-      <button type="button" class="sample-chip" data-theme="amber" data-sample="Concurso Banco do Brasil">
-        <span class="sample-dot"></span>Banco do Brasil
+      <button type="button" class="sample-chip" data-theme="emerald" data-sample="https://www.fuvest.br/vestibular-da-usp/">
+        <span class="sample-dot"></span>2. Link Oficial
       </button>
-      <button type="button" class="sample-chip" data-theme="terracotta" data-sample="Vestibular FUVEST USP">
-        <span class="sample-dot"></span>FUVEST / USP
-      </button>
-      <button type="button" class="sample-chip" data-theme="emerald" data-sample="Concurso Caixa Econômica Federal">
-        <span class="sample-dot"></span>Caixa Econômica
+      <button type="button" class="sample-chip" data-theme="amber" data-sample="EDITAL Nº 01/2026 — PROCESSO SELETIVO PÚBLICO. Art. 1º O presente edital rege o concurso para provimento de 120 vagas imediatas e cadastro reserva para o cargo de Técnico Administrativo (Nível Médio completo), com remuneração inicial de R$ 4.150,00 + auxílio-alimentação de R$ 1.000,00, jornada de 40h semanais. Art. 2º As inscrições ocorrerão exclusivamente pela internet no período de 10/11/2026 a 30/11/2026, mediante pagamento de taxa de R$ 85,00 (isenção para inscritos no CadÚnico entre 10/11 e 14/11/2026). Art. 3º A prova objetiva terá 60 questões de múltipla escolha (Língua Portuguesa: 15, Raciocínio Lógico: 10, Informática: 10, Conhecimentos Específicos: 25) e Redação dissertativa-argumentativa, aplicada em 17/01/2027. Será eliminado o candidato que zerar qualquer disciplina ou obtiver nota inferior a 50% do total.">
+        <span class="sample-dot"></span>3. Colar Texto do Edital
       </button>
     </div>
 
@@ -1788,7 +1778,7 @@
   </main>
 
   <footer>
-    <span>Krisis · Leitura inteligente de editais. Confira sempre o documento oficial.</span>
+    <span>Krisis · Leitura fiel de PDFs, links e textos de editais. Confira sempre o documento oficial.</span>
   </footer>
 
   <!-- Modal de Login / Cadastro Supabase -->
@@ -2547,7 +2537,7 @@
 
     const ModelArmorClient = (() => {
       const MAX_TEXT_LEN = 48000;
-      const MIN_TEXT_LEN = 3;
+      const MIN_TEXT_LEN = 10;
       const requestTimestamps = [];
       const dailyTimestamps = [];
       const MAX_REQ_PER_MIN = 6;
@@ -2675,8 +2665,30 @@
         }
       }
 
+      function normalizeInputOrUrl(rawTyped) {
+        // Se o usuário digitar um domínio sem protocolo (ex: "enem.com.br" ou "www.fuvest.br/edital"), converte para https://
+        if (!/\s/.test(rawTyped) && /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+([/?#][^\s]*)?$/i.test(rawTyped)) {
+          return `https://${rawTyped}`;
+        }
+        return rawTyped;
+      }
+
       function validate(rawText, pdfObj) {
-        const cleanTyped = sanitizeInput(rawText);
+        let cleanTyped = sanitizeInput(rawText);
+        if (!pdfObj) {
+          cleanTyped = normalizeInputOrUrl(cleanTyped);
+        }
+
+        const isValidUrl = /^https?:\/\/[^\s]+$/i.test(cleanTyped);
+
+        if (!pdfObj && !isValidUrl && cleanTyped.length < 120) {
+          return {
+            ok: false,
+            code: 'INVALID_FORMAT',
+            message: 'Não pesquisamos apenas pelo nome. Anexe o PDF do edital, cole um link (ex: https://...) ou cole o texto completo do edital.'
+          };
+        }
+
         const combined = pdfObj
           ? `${cleanTyped ? `Observação do candidato: ${cleanTyped}\n` : ''}Arquivo PDF: ${pdfObj.name}\nConteúdo extraído: ${pdfObj.extractedText}`
           : cleanTyped;
@@ -2687,7 +2699,7 @@
           return {
             ok: false,
             code: 'INVALID_LENGTH',
-            message: 'Digite o nome do edital, cole um link ou anexe o PDF.'
+            message: 'Anexe o PDF do edital, cole um link válido ou cole o texto do edital.'
           };
         }
 
@@ -2715,7 +2727,7 @@
 
         const displayTitle = pdfObj
           ? pdfObj.name
-          : (cleanTyped.length > 36 ? cleanTyped.slice(0, 36) + '...' : cleanTyped);
+          : (cleanTyped.length > 38 ? cleanTyped.slice(0, 38) + '...' : cleanTyped);
 
         return { ok: true, clean, displayTitle, isPdf: Boolean(pdfObj) };
       }
@@ -2812,7 +2824,7 @@
 
     function getStatusClass(statusRaw) {
       const statusNorm = String(statusRaw || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (statusNorm.includes('abert') || statusNorm.includes('ativ') || statusNorm.includes('publicad')) return 'aberto';
+      if (statusNorm.includes('abert') || statusNorm.includes('ativ') || statusNorm.includes('publicad') || statusNorm.includes('analisad')) return 'aberto';
       if (statusNorm.includes('previst') || statusNorm.includes('autoriz') || statusNorm.includes('andamento')) return 'previsto';
       if (statusNorm.includes('encerrad') || statusNorm.includes('fechad')) return 'encerrado';
       return '';
@@ -2827,7 +2839,7 @@
         return safeFallback;
       }
 
-      const statusRaw = String(parsed.status || 'Consultar Cronograma').trim();
+      const statusRaw = String(parsed.status || 'Edital / Documento Analisado').trim();
       const statusClass = getStatusClass(statusRaw);
 
       const cards = [];
@@ -2879,7 +2891,7 @@
         <div class="checklist-box">
           <div class="checklist-header">
             <span class="checklist-title">Checklist de Ação Imediata</span>
-            <span class="checklist-badge">${escapeHTML(parsed.bancaOrgao || 'Guia do Candidato')}</span>
+            <span class="checklist-badge">${escapeHTML(parsed.bancaOrgao || 'Documento Analisado')}</span>
           </div>
           <div class="checklist-text">${formatRichLinesHTML(parsed.checklist)}</div>
         </div>
@@ -3000,8 +3012,8 @@
       try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageW = doc.internal.pageSize.getWidth();   // 210
-        const pageH = doc.internal.pageSize.getHeight();  // 297
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
         const marginX = 14;
         const contentW = pageW - marginX * 2;
         const bottomLimit = pageH - 18;
@@ -3011,7 +3023,6 @@
         const stamp = `${now.toLocaleDateString('pt-BR')} as ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
         function drawPageChrome(isFirst) {
-          // Faixa superior tricolor
           doc.setFillColor(29, 78, 216);
           doc.rect(0, 0, pageW * 0.6, 3, 'F');
           doc.setFillColor(15, 118, 110);
@@ -3049,7 +3060,6 @@
 
         drawPageChrome(true);
 
-        // Bloco Hero (Título, Banca, Status, Resumo Executivo)
         const titleLines = doc.splitTextToSize(normalizePdfText(currentAnalysisData.titulo || 'Resumo Executivo do Edital'), contentW - 10);
         const orgText = normalizePdfText(`${currentAnalysisData.bancaOrgao || ''}  |  Status: ${currentAnalysisData.status || ''}${currentAnalysisData.escolaridade ? '  |  ' + currentAnalysisData.escolaridade : ''}`);
         const orgLines = doc.splitTextToSize(orgText, contentW - 10);
@@ -3085,7 +3095,6 @@
 
         y += heroH + 6;
 
-        // Função para desenhar cada seção colorida com quebra de página segura
         function drawSectionBlock(kicker, heading, rawBody, theme) {
           const cleanBody = normalizePdfText(rawBody);
           if (!cleanBody) return;
@@ -3095,7 +3104,6 @@
           const lineH = 4.7;
           const totalH = headerH + bodyLines.length * lineH + 5;
 
-          // Se couber inteiro na página atual, desenha caixa única; se for muito longo, divide em blocos por página
           if (totalH <= (bottomLimit - 16)) {
             ensureSpace(totalH);
             doc.setFillColor(...theme.bg);
@@ -3122,7 +3130,6 @@
 
             y += totalH + 5;
           } else {
-            // Bloco longo: imprime cabeçalho e fatia linhas conforme espaço da página
             ensureSpace(24);
             doc.setFillColor(...theme.accent);
             doc.rect(marginX, y, 2.5, 11, 'F');
@@ -3202,7 +3209,6 @@
           });
         }
 
-        // Rodapé numerado em todas as páginas
         const pageCount = doc.internal.getNumberOfPages();
         for (let p = 1; p <= pageCount; p++) {
           doc.setPage(p);
@@ -3213,7 +3219,7 @@
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(8);
           doc.setTextColor(100, 116, 139);
-          doc.text('Krisis - Leitura inteligente de editais. Confira sempre o documento oficial.', marginX, pageH - 7.5);
+          doc.text('Krisis - Leitura fiel de editais. Confira sempre o documento oficial.', marginX, pageH - 7.5);
           doc.text(`Pagina ${p} de ${pageCount}`, pageW - marginX, pageH - 7.5, { align: 'right' });
         }
 
@@ -3324,22 +3330,8 @@
 
       const validation = ModelArmorClient.validate(rawEntrada, attachedPdfData);
       if (!validation.ok) {
-        currentGeneratedSummary = '';
-        currentAnalysisData = null;
-        resultSubjectBadge.textContent = 'Aviso';
-        resultDockTitle.textContent = validation.code === 'MODEL_ARMOR_BLOCKED'
-          ? 'Bloqueado pelo Model Armor'
-          : validation.code === 'RATE_LIMITED'
-            ? 'Limite temporário atingido'
-            : 'Entrada inválida';
-        resultActionsCluster.style.display = 'none';
-        resultSummaryBody.textContent = validation.message;
-
-        resultWrapper.classList.add('is-rendered');
-        requestAnimationFrame(() => resultWrapper.classList.add('is-visible'));
-
-        const destRect = destinationSection.getBoundingClientRect();
-        smoothScrollToTarget(Math.max(0, window.scrollY + destRect.top - (H * 0.25)), 550);
+        showNotice(validation.message);
+        editalInput.focus();
         return;
       }
 
@@ -3351,7 +3343,7 @@
       currentGeneratedSummary = '';
       currentAnalysisData = null;
       resultSubjectBadge.textContent = validation.displayTitle;
-      resultDockTitle.textContent = 'Pesquisando e decupando edital...';
+      resultDockTitle.textContent = 'Lendo e decupando edital...';
       resultActionsCluster.style.display = 'none';
       resultSummaryBody.innerHTML = `
         <div class="result-skeleton">
@@ -3446,7 +3438,15 @@
 
     btnGenerate.addEventListener('click', () => iniciarAnaliseEdital(false));
 
-    document.querySelectorAll('.sample-chip').forEach(chip => {
+    const chipOpenPdf = document.getElementById('chipOpenPdf');
+    if (chipOpenPdf) {
+      chipOpenPdf.addEventListener('click', () => {
+        hideNotice();
+        pdfFileInput.click();
+      });
+    }
+
+    document.querySelectorAll('.sample-chip[data-sample]').forEach(chip => {
       chip.addEventListener('click', () => {
         hideNotice();
         clearPdfAttachment();
