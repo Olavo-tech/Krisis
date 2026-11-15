@@ -1282,19 +1282,19 @@
     .pdf-badge-status.aberto {
       background: #dcfce7;
       color: #065f46;
-      border-color: #86efac;
+      border: 1px solid #86efac;
     }
 
     .pdf-badge-status.previsto {
       background: #fef3c7;
       color: #92400e;
-      border-color: #fcd34d;
+      border: 1px solid #fcd34d;
     }
 
     .pdf-badge-status.encerrado {
       background: #fee2e2;
       color: #991b1b;
-      border-color: #fca5a5;
+      border: 1px solid #fca5a5;
     }
 
     .pdf-badge-neutral {
@@ -1801,14 +1801,13 @@
     }
 
     /* =========================================================================
-       0. CLIENTE SUPABASE AUTH (LOGIN SOB DEMANDA AO ANALISAR)
+       0. CLIENTE SUPABASE AUTH (CREDENCIAIS CONFIGURADAS)
        ========================================================================= */
-    const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
-    const SUPABASE_ANON_KEY = 'SUA_CHAVE_PUBLICA_ANON_AQUI';
+    const SUPABASE_URL = 'https://motorkzdvzdkdzkiqcwa.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_Q8EObZyCB6lX5Xt7l1tYcA_XBAYfOP_';
 
     const isSupabaseConfigured =
       SUPABASE_URL.startsWith('https://') &&
-      !SUPABASE_URL.includes('SEU-PROJETO') &&
       SUPABASE_ANON_KEY.length > 20;
 
     const supabaseClient = (window.supabase && isSupabaseConfigured)
@@ -1904,7 +1903,7 @@
 
     btnAuthLogin.addEventListener('click', async () => {
       if (!supabaseClient) {
-        setAuthFeedback('Configure SUPABASE_URL e SUPABASE_ANON_KEY no index.html.', 'err');
+        setAuthFeedback('Erro ao inicializar cliente Supabase.', 'err');
         return;
       }
       const email = authEmailInput.value.trim();
@@ -1927,7 +1926,7 @@
 
     btnAuthSignup.addEventListener('click', async () => {
       if (!supabaseClient) {
-        setAuthFeedback('Configure SUPABASE_URL e SUPABASE_ANON_KEY no index.html.', 'err');
+        setAuthFeedback('Erro ao inicializar cliente Supabase.', 'err');
         return;
       }
       const email = authEmailInput.value.trim();
@@ -1947,7 +1946,7 @@
         syncAuthUI();
         onAuthSuccessResumeIfNeeded();
       } else {
-        setAuthFeedback('Conta criada! Verifique seu e-mail para confirmar o acesso.', 'ok');
+        setAuthFeedback('Conta criada! Desative "Confirm email" no Supabase Auth para entrar sem precisar abrir o e-mail.', 'ok');
       }
     });
 
