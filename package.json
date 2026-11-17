@@ -1,0 +1,6 @@
+{
+  "name": "krisis",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" }
+}
