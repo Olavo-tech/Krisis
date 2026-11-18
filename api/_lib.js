@@ -76,7 +76,6 @@ function parseJson(raw) {
   }
 }
 
-// Chama a Groq pedindo JSON; tenta os modelos em ordem. Lança erro se todos falharem.
 export async function groqJson(apiKey, system, user) {
   const fromEnv = String(process.env.GROQ_MODELS || '').split(',').map((s) => s.trim()).filter(Boolean);
   const models = fromEnv.length ? fromEnv : DEFAULT_MODELS;
@@ -95,4 +94,49 @@ export async function groqJson(apiKey, system, user) {
   }
   console.error('[ai] falha:', errors.join(' | '));
   throw new Error('ai_failed');
+}
+
+/* ---- Leitura segura de páginas web (bloqueia endereços internos, inclusive em redirecionamentos) ---- */
+function isPrivateHost(hostname) {
+  const h = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!h || h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return true;
+  if (h === '::1' || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80')) return true;
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const [a, b] = [Number(m[1]), Number(m[2])];
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224;
+  }
+  return !h.includes('.');
+}
+
+function stripHtml(html) {
+  return String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ').replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/\s+/g, ' ').trim();
+}
+
+export async function fetchPage(startUrl) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), 11000);
+  try {
+    let current = startUrl, resp = null;
+    for (let hop = 0; hop <= 3; hop++) {
+      let parsed;
+      try { parsed = new URL(current); } catch (_) { return { ok: false, reason: 'O link informado é inválido.' }; }
+      if (!/^https?:$/.test(parsed.protocol) || isPrivateHost(parsed.hostname)) return { ok: false, reason: 'Este endereço não pode ser acessado. Use um link público ou cole o texto.' };
+      resp = await fetch(parsed.toString(), { signal: ctrl.signal, redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8' } });
+      if (resp.status >= 300 && resp.status < 400 && resp.headers.get('location')) { current = new URL(resp.headers.get('location'), parsed).toString(); continue; }
+      break;
+    }
+    if (!resp || !resp.ok) return { ok: false, reason: 'O site respondeu com erro. Cole o texto da página ou envie o PDF.' };
+    const ct = (resp.headers.get('content-type') || '').toLowerCase();
+    if (ct.includes('application/pdf')) return { ok: false, reason: 'Este link é um PDF. Baixe e anexe o arquivo.' };
+    const text = stripHtml((await resp.text()).slice(0, 2000000));
+    if (text.length < 250 || /access denied|captcha|enable javascript|cloudflare/i.test(text.slice(0, 600))) return { ok: false, reason: 'Este site bloqueia leitura automática. Copie o texto e cole aqui.' };
+    return { ok: true, text: text.slice(0, 14000) };
+  } catch (_) {
+    return { ok: false, reason: 'Não foi possível acessar este link. Copie o texto e cole aqui.' };
+  } finally { clearTimeout(id); }
 }
