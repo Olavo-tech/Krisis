@@ -1,0 +1,12 @@
+body{font-family:'Bricolage Grotesque',system-ui,-apple-system,sans-serif;background:#fff6e8;color:#0b0b0f;margin:0;line-height:1.65;background-image:radial-gradient(rgba(11,11,15,.07) 1.4px,transparent 1.6px);background-size:22px 22px}
+.g-top{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0b0b0f}
+.g-top a{color:#fff6e8;text-decoration:none;font-weight:800;font-size:1.15rem}
+.g-top a.cta{background:#ff6a13;color:#0b0b0f;padding:.55rem 1rem;border-radius:14px;border:2px solid #fff6e8;font-size:.95rem}
+main{max-width:720px;margin:0 auto;padding:32px 20px 48px}
+h1{font-size:clamp(2rem,6vw,3rem);letter-spacing:-.04em;line-height:1.05;margin:0 0 12px}
+h2{margin:2rem 0 .4rem;font-size:1.5rem;letter-spacing:-.02em}
+p.lead{font-size:1.15rem;color:#4a4034}
+ul,ol{padding-left:1.2rem}li{margin:.3rem 0}
+.box{background:#ffd34d;border:2px solid #0b0b0f;border-radius:20px;padding:16px 18px;box-shadow:0 4px 0 #0b0b0f;margin:24px 0}
+.btn{display:inline-block;background:#ff6a13;color:#0b0b0f;font-weight:800;text-decoration:none;padding:.9rem 1.3rem;border-radius:16px;border:2px solid #0b0b0f;border-bottom-width:4px}
+footer{max-width:720px;margin:0 auto;padding:0 20px 40px;color:#6b5f52}footer a{color:#d9520a;font-weight:700}

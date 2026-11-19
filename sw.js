@@ -1,7 +1,7 @@
-// Service worker: rede primeiro, cache como reserva (o app abre mesmo sem internet).
-const V = 'krisis-v3';
+// Service worker: rede primeiro, cache como reserva; recebe notificações (Web Push).
+const V = 'krisis-v4';
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(V).then((c) => c.addAll(['/', '/css/app.css', '/css/theme.css'])).catch(() => {}));
+  e.waitUntil(caches.open(V).then((c) => c.addAll(['/', '/css/app.css', '/css/theme.css', '/css/extra.css'])).catch(() => {}));
   self.skipWaiting();
 });
 self.addEventListener('activate', (e) => {
@@ -18,4 +18,24 @@ self.addEventListener('fetch', (e) => {
       return res;
     }).catch(() => caches.match(r).then((m) => m || caches.match('/')))
   );
+});
+
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Krisis', {
+    body: d.body || '',
+    icon: '/api/icon?s=192',
+    badge: '/api/icon?s=96',
+    tag: d.tag || 'krisis',
+    data: { url: d.url || '/#/hoje' }
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
+    for (const c of cs) { if ('focus' in c) { c.navigate(url).catch(() => {}); return c.focus(); } }
+    return self.clients.openWindow(url);
+  }));
 });

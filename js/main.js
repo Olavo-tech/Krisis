@@ -17,6 +17,7 @@ import { renderMagico } from './views/magico.js';
 import { renderEu } from './views/eu.js';
 import { openPalette } from './views/command.js';
 import { openTutor } from './views/tutor.js';
+import { openQuizSetup, openEssay } from './views/quiz.js';
 import { initSfx } from './sfx.js';
 import { tapToStart } from './native.js';
 import { startMascot, unmountPet, MASCOT } from './mascot.js';
@@ -57,6 +58,7 @@ function lastLabel() {
   try { return 'Último acesso: ' + new Date(prevVisit).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }); } catch (_) { return ''; }
 }
 const navLink = (href, i, label) => h('a', { href, 'data-r': href.split('/')[1] }, ic(i), label);
+const navBtn = (i, label, fn) => h('button', { class: 'nav-b', onclick: fn }, ic(i), label);
 
 function statChips() {
   const s = getStats();
@@ -80,7 +82,10 @@ function buildShell() {
     h('div', { class: 'greet' }, h('span', { class: 'greet-s' }, 'Bem-vindo de volta,'), h('b', { class: 'greet-n' }, name), h('span', { class: 'greet-l' }, lastLabel()), h('div', { class: 'lvl', id: 'lvlBox' })),
     h('nav', { class: 'nav', id: 'nav', 'aria-label': 'Principal' }, h('i', { class: 'nav-ind', id: 'navInd' }),
       NAV.map(([label, items]) => [h('div', { class: 'side-label' }, label), items.map(([href, i, l]) => navLink(href, i, l))]),
-      h('button', { class: 'nav-b', onclick: () => openTutor() }, ic('chat'), 'Pergunte ao ' + MASCOT)),
+      h('div', { class: 'side-label' }, 'Com IA'),
+      navBtn('target', 'Simulado com IA', () => openQuizSetup()),
+      navBtn('pencil', 'Corrigir redação', () => openEssay()),
+      navBtn('chat', 'Pergunte ao ' + MASCOT, () => openTutor())),
     h('div', { class: 'side-section' },
       h('div', { class: 'side-title' }, h('span', {}, 'Páginas'), h('button', { class: 'icon-btn tiny', title: 'Nova página', 'aria-label': 'Nova página', onclick: () => newPageModal(null) }, icon('plus', 16))),
       h('div', { id: 'tree', class: 'tree' })),
@@ -175,9 +180,11 @@ function render() {
     root.append(renderLanding({ onLogin: () => openAuthScreen('login'), onSignup: () => openAuthScreen('signup') }));
     return;
   }
+  const first = displayName().split(' ')[0];
   root.append(buildShell());
   route();
-  startMascot(displayName().split(' ')[0]);
+  startMascot(first);
+  if (!store.get('krisis.onb.' + state.user.id, false)) setTimeout(() => import('./views/onboarding.js').then((m) => m.startOnboarding(first)), 1600);
 }
 
 function handleShare() {

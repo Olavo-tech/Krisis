@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Krisis">
   <title>Krisis — Seu espaço de estudo para vestibulares e editais</title>
-  <meta name="description" content="O Krisis junta leitura de editais com IA, captura mágica de conteúdo, radar de prazos, páginas estilo Notion, tarefas, cartões de revisão e foco para você estudar para vestibulares e concursos sem sair do app.">
+  <meta name="description" content="O Krisis junta leitura de editais com IA, captura mágica de conteúdo, simulados, correção de redação ENEM, radar de prazos, páginas estilo Notion, tarefas, cartões de revisão e foco para você estudar sem sair do app.">
   <link rel="canonical" href="https://krisis-seven.vercel.app/">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/api/icon?s=180">
@@ -21,12 +21,13 @@
   <meta property="og:url" content="https://krisis-seven.vercel.app/">
   <meta property="og:image" content="https://krisis-seven.vercel.app/api/icon?s=512">
   <meta name="twitter:card" content="summary">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Krisis","url":"https://krisis-seven.vercel.app/","applicationCategory":"EducationalApplication","inLanguage":"pt-BR","description":"Espaço de estudo para vestibulares e editais com leitura de editais por IA, captura mágica, radar de prazos, páginas, tarefas, cartões e foco.","offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Krisis","url":"https://krisis-seven.vercel.app/","applicationCategory":"EducationalApplication","inLanguage":"pt-BR","description":"Espaço de estudo para vestibulares e editais com leitura de editais por IA, captura mágica, simulados, correção de redação, radar de prazos, páginas, tarefas, cartões e foco.","offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"}}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Gochi+Hand&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/app.css">
   <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/extra.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
   <script type="module" src="/js/main.js"></script>
@@ -35,7 +36,12 @@
   <div id="app">
     <main class="boot">
       <h1>Krisis</h1>
-      <p>Seu espaço de estudo para vestibulares e editais: leia editais com IA, deixe a captura mágica organizar seu material, acompanhe prazos e revise com cartões.</p>
+      <p>Seu espaço de estudo para vestibulares e editais: leia editais com IA, deixe a captura mágica organizar seu material, acompanhe prazos, faça simulados e revise com cartões.</p>
+      <nav aria-label="Guias">
+        <a href="/guia/como-ler-um-edital.html">Como ler um edital</a> ·
+        <a href="/guia/cronograma-de-estudos-vestibular.html">Cronograma de estudos</a> ·
+        <a href="/guia/revisao-espacada-flashcards.html">Revisão espaçada</a>
+      </nav>
     </main>
   </div>
   <noscript>O Krisis precisa de JavaScript para funcionar. Ative-o no navegador e recarregue a página.</noscript>

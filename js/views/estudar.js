@@ -3,6 +3,7 @@ import { ic } from '../icons.js';
 import { pageIcon } from '../core.js';
 import { loadPages, newPageModal } from './pages.js';
 import { openTutor } from './tutor.js';
+import { openQuizSetup, openEssay } from './quiz.js';
 import { MASCOT } from '../mascot.js';
 
 const T = [
@@ -16,8 +17,10 @@ const T = [
 
 export async function renderEstudar(box) {
   const tile = ([tone, pat, i, title, desc, href]) => h('a', { class: 'pl pat pat-' + pat + ' ' + tone, href }, h('div', { class: 'pl-top' }, ic(i, 26), h('span', { class: 'pl-go' }, ic('arrow', 16))), h('div', {}, h('b', {}, title), h('small', {}, desc)));
-  const act = (tone, pat, i, title, desc, fn) => { const b = h('button', { class: 'pl pat pat-' + pat + ' ' + tone, style: 'text-align:left;width:100%', onclick: fn }, h('div', { class: 'pl-top' }, ic(i, 26), h('span', { class: 'pl-go' }, ic('arrow', 16))), h('div', {}, h('b', {}, title), h('small', {}, desc))); return b; };
+  const act = (tone, pat, i, title, desc, fn) => h('button', { class: 'pl pat pat-' + pat + ' ' + tone, style: 'text-align:left;width:100%', onclick: fn }, h('div', { class: 'pl-top' }, ic(i, 26), h('span', { class: 'pl-go' }, ic('arrow', 16))), h('div', {}, h('b', {}, title), h('small', {}, desc)));
   box.append(h('div', { class: 'hub' }, T.map(tile),
+    act('orange', 'checks', 'target', 'Simulado com IA', 'Erros viram cartões', () => openQuizSetup()),
+    act('lilac', 'waves', 'pencil', 'Corrigir redação', 'Nota pelas 5 competências', () => openEssay()),
     act('sky', 'waves', 'file', 'Nova página', 'Modelos prontos', () => newPageModal(null)),
     act('ink', 'dots', 'chat', 'Pergunte ao ' + MASCOT, 'Tutor com IA', () => openTutor())));
   const list = h('div', { class: 'list' });

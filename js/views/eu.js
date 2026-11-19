@@ -1,9 +1,33 @@
-import { h, state, getStats, store, isPlus } from '../core.js';
+import { sb, h, state, getStats, store, isPlus } from '../core.js';
 import { ic } from '../icons.js';
 import { displayName, openAccount } from '../auth.js';
 import { createKri, bindPoke, speak, MASCOT } from '../mascot.js';
 import { sfx, soundOn, setSound, haptic } from '../sfx.js';
 import { canInstall, installApp, isIOS, isStandalone, isMobile, enterFullscreen, inFullscreen, canFullscreen } from '../native.js';
+import { toast } from '../core.js';
+
+const b64ToU8 = (s) => { const raw = atob((s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); };
+async function pushApi(body) {
+  const { data } = await sb.auth.getSession();
+  const r = await fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (data.session ? data.session.access_token : '') }, body: JSON.stringify(body) });
+  return r.json().catch(() => ({ ok: false }));
+}
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+async function currentSub() { const reg = await navigator.serviceWorker.ready; return reg.pushManager.getSubscription(); }
+async function enablePush() {
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') throw new Error('Permissão negada. Libere as notificações nas configurações do navegador.');
+  const k = await (await fetch('/api/push-key')).json();
+  if (!k.key) throw new Error('Não foi possível ativar agora.');
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(k.key) });
+  const r = await pushApi({ action: 'subscribe', subscription: sub.toJSON() });
+  if (!r.ok) throw new Error(r.message || 'Não foi possível salvar a inscrição.');
+}
+async function disablePush() {
+  const sub = await currentSub();
+  if (sub) { await pushApi({ action: 'unsubscribe', endpoint: sub.endpoint }); await sub.unsubscribe(); }
+}
 
 export function renderEu(box) {
   const st = getStats();
@@ -26,14 +50,36 @@ export function renderEu(box) {
 
   const sw = (title, desc, get, set) => {
     const s = h('span', { class: 'sw' + (get() ? ' on' : '') });
-    const row = h('button', { class: 'set', onclick: () => { const v = !get(); set(v); s.classList.toggle('on', v); } }, h('div', { class: 'grow' }, title, h('small', {}, desc)), s);
-    return row;
+    return h('button', { class: 'set', onclick: () => { const v = !get(); set(v); s.classList.toggle('on', v); } }, h('div', { class: 'grow' }, title, h('small', {}, desc)), s);
   };
   box.append(
     sw('Sons fofos', 'Efeitos e a voz do ' + MASCOT, soundOn, (v) => { setSound(v); if (v) sfx.chirp('happy'); }),
     sw('Vibração', 'Retorno tátil nos toques (celular)', () => store.get('krisis.haptic', true), (v) => { store.set('krisis.haptic', v); if (v) haptic(20); }),
     isMobile() ? sw('Tela cheia automática', 'Volta para tela cheia no próximo toque', () => store.get('krisis.fs', true), (v) => { store.set('krisis.fs', v); if (v) enterFullscreen(); }) : null,
     sw('Tema escuro', 'Preto com laranja', () => document.documentElement.getAttribute('data-theme') === 'dark', () => document.dispatchEvent(new CustomEvent('krisis:theme-toggle'))));
+
+  // Lembretes diários por notificação
+  const pushSw = h('span', { class: 'sw' });
+  const pushDesc = h('small', {}, 'Todo dia de manhã, o ' + MASCOT + ' avisa das tarefas e cartões');
+  const testBtn = h('button', { class: 'btn sm', style: 'display:none;margin-top:8px', type: 'button' }, 'Enviar um teste agora');
+  const pushRow = h('button', { class: 'set', type: 'button' }, ic('sparkle', 20), h('div', { class: 'grow' }, 'Lembretes diários', pushDesc, testBtn), pushSw);
+  let pushOn = false;
+  const paintPush = () => { pushSw.classList.toggle('on', pushOn); testBtn.style.display = pushOn ? '' : 'none'; };
+  if (!pushSupported()) { pushDesc.textContent = 'Seu navegador não suporta notificações.'; }
+  else if (isIOS() && !isStandalone()) { pushDesc.textContent = 'No iPhone, instale o app na Tela de Início para ativar.'; }
+  else {
+    currentSub().then((s) => { pushOn = !!s; paintPush(); }).catch(() => {});
+    pushRow.addEventListener('click', async (e) => {
+      if (e.target === testBtn) return;
+      try {
+        if (pushOn) { await disablePush(); pushOn = false; speak('Lembretes desligados.', 2200); }
+        else { await enablePush(); pushOn = true; sfx.chirp('happy'); speak('Combinado! Eu aviso você.', 2600); }
+      } catch (err) { toast(err.message || 'Não foi possível mudar agora.', 'err'); }
+      paintPush();
+    });
+    testBtn.addEventListener('click', async (e) => { e.stopPropagation(); const r = await pushApi({ action: 'test' }); toast(r.ok ? 'Teste enviado! Olhe suas notificações.' : (r.message || 'Não foi possível enviar.'), r.ok ? 'ok' : 'err'); });
+  }
+  box.append(pushRow);
 
   if (!isStandalone()) {
     if (canInstall()) box.append(h('button', { class: 'set', onclick: async () => { const ok = await installApp(); if (ok) speak('App instalado!', 2500); } }, ic('download', 20), h('div', { class: 'grow' }, 'Instalar o app', h('small', {}, 'Abre em tela cheia, direto da tela inicial'))));
