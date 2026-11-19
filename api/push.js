@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     const subs = r.ok ? await r.json() : [];
     let sent = 0;
     for (const s of subs) {
-      try { await sendPush(s, { title: 'Krispim', body: 'Oi! Se você está vendo isso, os lembretes estão funcionando.', url: '/#/hoje', tag: 'teste' }); sent++; }
+      try { await sendPush(s, { title: 'Tuck', body: 'Quack! Se você está vendo isso, os lembretes estão funcionando.', url: '/#/hoje', tag: 'teste' }); sent++; }
       catch (e) { if (e && (e.statusCode === 404 || e.statusCode === 410)) await fetch(`${cfg.SUPABASE_URL}/rest/v1/push_subscriptions?id=eq.${s.id}`, { method: 'DELETE', headers: hdr(cfg) }); }
     }
     return res.status(200).json({ ok: sent > 0, sent, message: sent ? '' : 'Nenhum dispositivo ativo. Ative os lembretes de novo.' });

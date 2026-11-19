@@ -1,4 +1,4 @@
-// /api/cron-remind — lembrete diário (Vercel Cron, 08h30 em Brasília). Envia no máximo 1 vez a cada 20 h por usuário.
+// /api/cron-remind — lembrete diário (Vercel Cron, 08h30 em Brasília). No máximo 1 vez a cada 20 h por usuário.
 import { readEnv } from './_lib.js';
 import { sendPush } from './_webpush.js';
 
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     const subs = sr.ok ? await sr.json() : [];
     for (const s of subs) {
       try {
-        await sendPush(s, { title: 'Hora de estudar?', body: 'Você tem ' + parts.join(' e ') + ' esperando. O Krispim já separou tudo.', url: row.tasks_due ? '/#/tarefas' : '/#/cartoes', tag: 'diario' });
+        await sendPush(s, { title: 'Hora de estudar?', body: 'Você tem ' + parts.join(' e ') + ' esperando. O Tuck já separou tudo.', url: row.tasks_due ? '/#/tarefas' : '/#/cartoes', tag: 'diario' });
         await fetch(`${cfg.SUPABASE_URL}/rest/v1/push_subscriptions?id=eq.${s.id}`, { method: 'PATCH', headers: hdr(cfg), body: JSON.stringify({ last_sent: new Date().toISOString() }) });
         sent++;
       } catch (e) {

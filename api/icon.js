@@ -1,4 +1,4 @@
-// /api/icon?s=192 — ícone PNG do app (rosto do Krispim), gerado sem bibliotecas.
+// /api/icon?s=192 — ícone PNG do app (o Tuck), gerado sem bibliotecas.
 import zlib from 'node:zlib';
 
 const T = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
@@ -10,21 +10,17 @@ function chunk(type, data) {
   return Buffer.concat([len, td, crc]);
 }
 
-const ORANGE = [255, 106, 19], BLACK = [11, 11, 15], WHITE = [255, 255, 255];
+const BG = [27, 23, 64], YEL = [255, 210, 31], OR = [255, 138, 31], BLK = [27, 26, 34], WHITE = [255, 255, 255], CAP = [31, 31, 38], RED = [214, 51, 75];
 function shade(u, v) {
   const d = (cx, cy) => Math.hypot(u - cx, v - cy);
-  // brilho dos olhos
-  if (d(0.335, 0.435) < 0.026 || d(0.655, 0.435) < 0.026) return WHITE;
-  // pupilas
-  if (d(0.35, 0.47) < 0.078 || d(0.67, 0.47) < 0.078) return BLACK;
-  // olhos
-  if (d(0.35, 0.45) < 0.15 || d(0.67, 0.45) < 0.15) return WHITE;
-  // sorriso
-  const r = d(0.51, 0.62);
-  if (r > 0.1 && r < 0.13 && v > 0.64 && Math.abs(u - 0.51) < 0.11) return BLACK;
-  // brotinho
-  if (d(0.5, 0.17) < 0.045) return BLACK;
-  return ORANGE;
+  if (d(0.415, 0.455) < 0.012 || d(0.585, 0.455) < 0.012) return WHITE;
+  if (Math.hypot((u - 0.43) / 0.032, (v - 0.47) / 0.044) < 1 || Math.hypot((u - 0.57) / 0.032, (v - 0.47) / 0.044) < 1) return BLK;
+  if (Math.hypot((u - 0.5) / 0.15, (v - 0.585) / 0.075) < 1) return OR;
+  if (d(0.235, 0.4) < 0.032 || (Math.abs(u - 0.235) < 0.008 && v > 0.27 && v < 0.4)) return RED;
+  if (Math.abs(u - 0.5) / 0.29 + Math.abs(v - 0.27) / 0.085 < 1) return CAP;
+  if (u > 0.385 && u < 0.615 && v > 0.27 && v < 0.35) return CAP;
+  if (d(0.5, 0.5) < 0.3) return YEL;
+  return BG;
 }
 
 export default function handler(req, res) {

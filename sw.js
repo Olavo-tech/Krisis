@@ -1,5 +1,5 @@
-// Service worker: rede primeiro, cache como reserva; recebe notificações (Web Push).
-const V = 'krisis-v4';
+// Service worker do Eduquack: rede primeiro, cache como reserva; recebe notificações (Web Push).
+const V = 'eduquack-v5';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(V).then((c) => c.addAll(['/', '/css/app.css', '/css/theme.css', '/css/extra.css'])).catch(() => {}));
   self.skipWaiting();
@@ -23,11 +23,11 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Krisis', {
+  e.waitUntil(self.registration.showNotification(d.title || 'Eduquack', {
     body: d.body || '',
     icon: '/api/icon?s=192',
     badge: '/api/icon?s=96',
-    tag: d.tag || 'krisis',
+    tag: d.tag || 'eduquack',
     data: { url: d.url || '/#/hoje' }
   }));
 });

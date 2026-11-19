@@ -1,11 +1,17 @@
-Krisis.
-Discernimento e clareza sobre qualquer edital.
+# Eduquack
 
-O **Krisis** é uma aplicação web com Inteligência Artificial que analisa editais de concursos públicos, vestibulares, processos seletivos e bolsas de estudo — a partir do*nome, link, texto colado ou arquivo PDF — e organiza tudo o que realmente importa em segundos.
+Espaço de estudo para vestibulares, ENEM e concursos, com o mascote **Tuck**.
 
-O que o Krisis extrai automaticamente
-- Datas & Prazos: inscrições, pedidos de isenção, datas das provas e resultados.
-- Vagas & Remuneração: número de vagas, cotas, taxa de inscrição e salários/benefícios.
-- Requisitos: escolaridade exigida, idade, CNH, exames ou etapas eliminatórias.
-- Conteúdo & Provas: matérias cobradas, pesos, redação e estrutura da avaliação.
-- Checklist de Ação: próximos passos práticos para o candidato não perder nenhum prazo.
+- **Grátis:** pastas, trilha manual, tarefas, cartões, páginas e foco.
+- **Plus:** tudo com IA (trilha automática, lições adaptativas, cartões, resumos, simulados, correção de redação, análise de edital e conversa com o Tuck), com proteção de escopo.
+
+## Estrutura
+
+- `index.html`, `css/`, `js/` — app (JavaScript modular, sem build).
+- `api/` — funções serverless (Vercel): IA, notificações, ícone.
+- `supabase/migrations/` — banco (RLS em todas as tabelas).
+- `guia/` — páginas de conteúdo para SEO.
+
+## Variáveis de ambiente (Vercel)
+
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `CRON_SECRET`; opcionais: `PLUS_AI_LIMIT`, `PLUS_TUTOR_LIMIT`, `FREE_ANALYZE_LIMIT` (0 = análise só no Plus), `GROQ_MODELS`.
