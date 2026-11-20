@@ -1,4 +1,4 @@
-// /api/icon?s=192 — ícone PNG do app (o Tuck), gerado sem bibliotecas.
+// /api/icon?s=192 — ícone PNG do app: o rosto do pato (logo Eduquack), gerado sem bibliotecas.
 import zlib from 'node:zlib';
 
 const T = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
@@ -10,17 +10,14 @@ function chunk(type, data) {
   return Buffer.concat([len, td, crc]);
 }
 
-const BG = [27, 23, 64], YEL = [255, 210, 31], OR = [255, 138, 31], BLK = [27, 26, 34], WHITE = [255, 255, 255], CAP = [31, 31, 38], RED = [214, 51, 75];
+const YEL = [253, 212, 30], BLK = [17, 17, 17], OR = [244, 123, 32], ORD = [197, 90, 21];
+// olho em pílula (retângulo com pontas redondas)
+const pill = (u, v, cx, cy, hw, hh) => { const dy = Math.max(0, Math.abs(v - cy) - (hh - hw)); return Math.hypot(u - cx, dy) < hw; };
 function shade(u, v) {
-  const d = (cx, cy) => Math.hypot(u - cx, v - cy);
-  if (d(0.415, 0.455) < 0.012 || d(0.585, 0.455) < 0.012) return WHITE;
-  if (Math.hypot((u - 0.43) / 0.032, (v - 0.47) / 0.044) < 1 || Math.hypot((u - 0.57) / 0.032, (v - 0.47) / 0.044) < 1) return BLK;
-  if (Math.hypot((u - 0.5) / 0.15, (v - 0.585) / 0.075) < 1) return OR;
-  if (d(0.235, 0.4) < 0.032 || (Math.abs(u - 0.235) < 0.008 && v > 0.27 && v < 0.4)) return RED;
-  if (Math.abs(u - 0.5) / 0.29 + Math.abs(v - 0.27) / 0.085 < 1) return CAP;
-  if (u > 0.385 && u < 0.615 && v > 0.27 && v < 0.35) return CAP;
-  if (d(0.5, 0.5) < 0.3) return YEL;
-  return BG;
+  if (pill(u, v, 0.31, 0.386, 0.038, 0.064) || pill(u, v, 0.6875, 0.386, 0.038, 0.064)) return BLK;
+  if (Math.hypot((u - 0.5) / 0.235, (v - 0.575) / 0.092) < 1) return OR;
+  if (Math.hypot((u - 0.5) / 0.225, (v - 0.598) / 0.098) < 1) return ORD;
+  return YEL;
 }
 
 export default function handler(req, res) {

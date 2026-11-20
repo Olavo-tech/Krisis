@@ -1,5 +1,5 @@
-// Tuck — o pato mascote do Eduquack. Muitas expressões e animações, sem balões de fala.
-// Em modo de suspensão (standby) ele dorme e só reage a cliques e a expressões rápidas.
+// Tuck — o pato mascote do Eduquack, no estilo do logo: olhos em pílula e bico laranja grande.
+// Muitas expressões e animações, sem balões de fala. Em standby ele dorme e só reage a cliques e a expressões rápidas.
 import { h, floatText } from './core.js';
 import { sfx } from './sfx.js';
 
@@ -9,32 +9,29 @@ const WING = 'M80 158 C58 128 26 108 8 114 C12 124 6 134 16 140 C12 150 24 156 3
 const SVG = `<svg viewBox="0 0 260 270" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 <ellipse cx="130" cy="262" rx="62" ry="7" fill="rgba(27,23,64,.18)"/>
 <g class="t-all">
-<g class="t-foot-l"><path d="M96 238 Q84 252 70 254 Q68 262 80 262 Q92 264 102 258 Q108 262 114 256 Q112 244 108 238 Z" fill="#ff8a1f"/></g>
-<g class="t-foot-r"><path d="M164 238 Q176 252 190 254 Q192 262 180 262 Q168 264 158 258 Q152 262 146 256 Q148 244 152 238 Z" fill="#ff8a1f"/></g>
-<ellipse cx="130" cy="186" rx="76" ry="62" fill="#ffd21f"/>
-<ellipse cx="130" cy="202" rx="48" ry="36" fill="#ffe98a"/>
+<g class="t-foot-l"><path d="M96 238 Q84 252 70 254 Q68 262 80 262 Q92 264 102 258 Q108 262 114 256 Q112 244 108 238 Z" fill="#f47b20"/></g>
+<g class="t-foot-r"><path d="M164 238 Q176 252 190 254 Q192 262 180 262 Q168 264 158 258 Q152 262 146 256 Q148 244 152 238 Z" fill="#f47b20"/></g>
+<ellipse cx="130" cy="186" rx="76" ry="62" fill="#fdd41e"/>
+<ellipse cx="130" cy="202" rx="48" ry="36" fill="#ffe985"/>
 <path d="M62 172 Q58 204 86 224 Q70 202 72 178 Z" fill="#f2b705" opacity=".6"/>
 <g class="t-book"><path d="M88 196 L130 208 L172 196 L172 238 L130 250 L88 238 Z" fill="#3b3a8f"/><path d="M130 208 L130 250" stroke="#fff" stroke-width="2" opacity=".5"/><path d="M96 204 L124 212 M96 214 L124 222 M96 224 L124 232 M136 212 L164 204 M136 222 L164 214" stroke="#cfd0ff" stroke-width="3" stroke-linecap="round"/></g>
 <g class="t-head">
-<circle cx="130" cy="108" r="56" fill="#ffd21f"/>
-<path d="M86 86 Q96 68 118 64" stroke="#ffe98a" stroke-width="6" stroke-linecap="round" fill="none" opacity=".8"/>
+<circle cx="130" cy="108" r="56" fill="#fdd41e"/>
+<path d="M86 86 Q96 68 118 64" stroke="#ffe985" stroke-width="6" stroke-linecap="round" fill="none" opacity=".8"/>
 <g class="t-cap"><path d="M98 70 L98 90 Q130 104 162 90 L162 70 Q130 82 98 70 Z" fill="#2b2b33"/><polygon points="130,36 200,60 130,80 60,60" fill="#1f1f26"/><circle cx="130" cy="58" r="4.5" fill="#3a3a44"/>
 <g class="t-tassel"><path d="M64 61 L60 98" stroke="#d6334b" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="103" r="7" fill="#d6334b"/><path d="M55 108 L53 120 M60 109 L60 122 M65 108 L67 120" stroke="#d6334b" stroke-width="3" stroke-linecap="round"/></g></g>
-<ellipse cx="96" cy="126" rx="10" ry="6.5" fill="#ff8fa3" opacity=".4"/><ellipse cx="164" cy="126" rx="10" ry="6.5" fill="#ff8fa3" opacity=".4"/>
-<path class="t-brow t-brow-l" d="M100 94 Q112 88 124 94" stroke="#2b2b33" stroke-width="4" stroke-linecap="round" fill="none"/><path class="t-brow t-brow-r" d="M136 94 Q148 88 160 94" stroke="#2b2b33" stroke-width="4" stroke-linecap="round" fill="none"/>
-<g class="t-eye t-eye-l"><g class="t-ball"><ellipse cx="108" cy="110" rx="8" ry="10.5" fill="#1b1a22"/><circle cx="105" cy="106" r="3" fill="#fff"/></g></g>
-<g class="t-eye t-eye-r"><g class="t-ball"><ellipse cx="152" cy="110" rx="8" ry="10.5" fill="#1b1a22"/><circle cx="149" cy="106" r="3" fill="#fff"/></g></g>
-<g class="t-sleepeyes" fill="none" stroke="#1b1a22" stroke-width="4" stroke-linecap="round"><path d="M98 112 Q108 120 118 112"/><path d="M142 112 Q152 120 162 112"/></g>
-<path d="M102 122 Q130 106 158 122 Q152 140 130 140 Q108 140 102 122 Z" fill="#ff8a1f"/><path d="M112 118 Q130 110 148 118" stroke="#ffb35c" stroke-width="4" stroke-linecap="round" fill="none"/>
-<circle cx="121" cy="119" r="1.6" fill="#c2610b"/><circle cx="139" cy="119" r="1.6" fill="#c2610b"/>
-<path class="t-m t-m-closed" d="M112 129 Q130 140 148 129" stroke="#c2610b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-<g class="t-m t-m-open"><path d="M108 126 Q130 152 152 126 Z" fill="#b3302a"/><ellipse cx="130" cy="140" rx="10" ry="6" fill="#ff7a8a"/></g>
-<path class="t-m t-m-sad" d="M114 136 Q130 126 146 136" stroke="#c2610b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-<ellipse class="t-m t-m-o" cx="130" cy="132" rx="7" ry="8" fill="#b3302a"/>
-<path class="t-m t-m-sleep" d="M120 130 Q130 135 140 130" stroke="#c2610b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+<path class="t-brow t-brow-l" d="M98 90 Q110 84 122 90" stroke="#111" stroke-width="4" stroke-linecap="round" fill="none"/><path class="t-brow t-brow-r" d="M138 90 Q150 84 162 90" stroke="#111" stroke-width="4" stroke-linecap="round" fill="none"/>
+<g class="t-eye t-eye-l"><g class="t-ball"><rect x="100" y="96" width="16" height="27" rx="8" fill="#111"/></g></g>
+<g class="t-eye t-eye-r"><g class="t-ball"><rect x="144" y="96" width="16" height="27" rx="8" fill="#111"/></g></g>
+<g class="t-sleepeyes" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"><path d="M98 112 Q108 120 118 112"/><path d="M142 112 Q152 120 162 112"/></g>
+<g class="t-m t-m-open"><ellipse cx="130" cy="141" rx="30" ry="9" fill="#b3302a"/><ellipse cx="130" cy="147" rx="12" ry="4.5" fill="#ff7a8a"/></g>
+<g class="t-low"><path d="M96 134 Q130 158 164 134 Q148 148 130 148 Q112 148 96 134 Z" fill="#c55a15"/></g>
+<path d="M92 128 C98 112 114 108 130 108 C146 108 162 112 168 128 C172 140 150 144 130 144 C110 144 88 140 92 128 Z" fill="#f47b20"/>
+<path d="M104 118 Q130 110 156 118" stroke="#ff9a4d" stroke-width="4" stroke-linecap="round" fill="none" opacity=".7"/>
+<g class="t-m t-m-closed"></g><g class="t-m t-m-sad"></g><g class="t-m t-m-o"></g><g class="t-m t-m-sleep"></g>
 </g>
-<g class="t-wing-l"><g class="t-flap"><path d="${WING}" fill="#ffc400"/><path d="M36 156 C44 146 56 142 68 146 M24 142 C34 136 46 134 56 138" stroke="#e8a200" stroke-width="3" fill="none" stroke-linecap="round"/></g></g>
-<g class="t-wing-r"><g class="t-flap"><g transform="translate(260 0) scale(-1 1)"><path d="${WING}" fill="#ffc400"/><path d="M36 156 C44 146 56 142 68 146 M24 142 C34 136 46 134 56 138" stroke="#e8a200" stroke-width="3" fill="none" stroke-linecap="round"/></g></g></g>
+<g class="t-wing-l"><g class="t-flap"><path d="${WING}" fill="#f5c400"/><path d="M36 156 C44 146 56 142 68 146 M24 142 C34 136 46 134 56 138" stroke="#e8a200" stroke-width="3" fill="none" stroke-linecap="round"/></g></g>
+<g class="t-wing-r"><g class="t-flap"><g transform="translate(260 0) scale(-1 1)"><path d="${WING}" fill="#f5c400"/><path d="M36 156 C44 146 56 142 68 146 M24 142 C34 136 46 134 56 138" stroke="#e8a200" stroke-width="3" fill="none" stroke-linecap="round"/></g></g></g>
 <g class="t-zzz"><text class="tz1" x="186" y="78" font-size="22" font-weight="800" fill="#1b1740">z</text><text class="tz2" x="202" y="54" font-size="28" font-weight="800" fill="#1b1740">Z</text></g>
 </g>
 <g class="t-sp"><path class="sp1" d="M26 70 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#f2b705"/><path class="sp2" d="M232 62 l2.500 6 6 2.500 -6 2.500 -2.500 6 -2.500 -6 -6 -2.500 6 -2.500z" fill="#5b4bd6"/><circle class="sp3" cx="214" cy="24" r="4" fill="#ff6b6b"/></g>
@@ -103,7 +100,6 @@ function poke(a) {
   sfx.quack(m === 'think' ? 'curious' : 'happy');
 }
 
-// Pequenas travessuras quando está acordado e parado
 function idleLoop(a) {
   clearTimeout(a.it);
   a.it = setTimeout(() => {
@@ -116,7 +112,6 @@ function idleLoop(a) {
   }, 3500 + Math.random() * 4500);
 }
 
-// cursor: os olhos dos Tucks acordados acompanham
 let raf = 0, mx = 0, my = 0;
 function look() {
   raf = 0;
@@ -148,7 +143,6 @@ setInterval(() => {
   instances.forEach((i) => { if (visible(i) && !i.dozing) i.setMood(i.base()); });
 }, 1000);
 
-// Reações do site: só expressões (sem fala)
 export function react(mood, ms = 1100) { instances.forEach((i) => { if (visible(i) && !i.dozing) i.setMood(mood, ms); }); }
 const awakeOne = () => [...instances].find((i) => !i.standby && visible(i));
 document.addEventListener('krisis:stats', (e) => {
