@@ -1,6 +1,6 @@
 // Experiência de app nativo no celular: tela cheia, instalação, toque inicial e dica para iPhone.
 import { h, store } from './core.js';
-import { createKri, MASCOT } from './mascot.js';
+import { createTuck, TUCK } from './tuck.js';
 import { ic } from './icons.js';
 import { sfx, haptic } from './sfx.js';
 
@@ -31,7 +31,6 @@ export function enterFullscreen() {
   }).catch(() => false);
 }
 
-// Se o usuário sair da tela cheia, o próximo toque volta para ela (pode ser desligado em Eu).
 function stickyFullscreen() {
   document.addEventListener('pointerdown', () => {
     if (isMobile() && !isStandalone() && !inFullscreen() && store.get('krisis.fs', true)) enterFullscreen();
@@ -40,37 +39,35 @@ function stickyFullscreen() {
 
 function iosHint() {
   if (!isIOS() || isStandalone()) return;
-  const last = store.get('krisis.iosHint', 0);
-  if (Date.now() - last < 3 * 864e5) return;
+  if (Date.now() - store.get('krisis.iosHint', 0) < 3 * 864e5) return;
   store.set('krisis.iosHint', Date.now());
   const card = h('div', { class: 'ios-hint' },
-    h('b', {}, 'Quer o Krisis em tela cheia?'),
-    h('p', {}, 'Toque em Compartilhar e depois em "Adicionar \u00e0 Tela de In\u00edcio". O app abre sem barras do navegador.'),
+    h('b', {}, 'Quer o Eduquack em tela cheia?'),
+    h('p', {}, 'Toque em Compartilhar e depois em "Adicionar \u00e0 Tela de In\u00edcio". O app abre sem as barras do navegador.'),
     h('button', { class: 'btn sm green', onclick: () => card.remove() }, 'Entendi'));
   document.body.append(card);
 }
 
-// Tela "toque para acordar o Krispim": o toque libera tela cheia e som.
+// Tela "toque para acordar o Tuck": o toque libera tela cheia e som.
 export function tapToStart() {
   return new Promise((resolve) => {
     if (!isMobile() || isStandalone() || inFullscreen()) { resolve(false); return; }
-    const kri = createKri({ size: 200 });
-    kri.setMood('sleep');
+    const tuck = createTuck({ size: 210 });
+    tuck.setMood('sleep');
+    tuck.locked = true;
     const ov = h('div', { class: 'tts', role: 'button', tabindex: '0', 'aria-label': 'Toque para come\u00e7ar' },
       h('div', { class: 'tts-blob b1' }), h('div', { class: 'tts-blob b2' }), h('div', { class: 'tts-blob b3' }),
-      h('div', { class: 'tts-mid' }, kri.el,
-        h('h1', {}, 'Toque para acordar o ' + MASCOT),
-        h('p', {}, 'O Krisis abre em tela cheia, como um app.')),
+      h('div', { class: 'tts-mid' }, tuck.el, h('h1', {}, 'Toque para acordar o ' + TUCK), h('p', {}, 'O Eduquack abre em tela cheia, como um app.')),
       h('span', { class: 'tts-cta' }, ic('expand', 18), 'Toque em qualquer lugar'));
     let busy = false;
     async function go() {
       if (busy) return; busy = true;
       sfx.unlock(); sfx.hello(); haptic(20);
-      kri.setMood('cheer', 1200);
+      tuck.setMood('cheer', 1200); tuck.quack();
       await enterFullscreen();
       stickyFullscreen();
       ov.classList.add('out');
-      setTimeout(() => { ov.remove(); resolve(true); iosHint(); }, 560);
+      setTimeout(() => { tuck.destroy(); ov.remove(); resolve(true); iosHint(); }, 560);
     }
     ov.addEventListener('click', go);
     ov.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') go(); });
