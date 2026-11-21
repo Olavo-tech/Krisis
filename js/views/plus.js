@@ -1,8 +1,8 @@
 import { h, icon, openModal, isPlus } from '../core.js';
-import { MASCOT } from '../mascot.js';
+import { TUCK } from '../tuck.js';
 
-const FREE = ['Leitura de editais (25 por dia)', 'Radar de prazos com contagem regressiva', 'Páginas com blocos e modelos', 'Tarefas, missões e sequência diária', 'Cartões com repetição espaçada', 'Foco, lembretes e o ' + MASCOT];
-const PLUS = ['Tudo do plano grátis', 'Captura mágica: página, cartões e tarefas sozinhos', 'Tutor ' + MASCOT + ' que lê a sua tela', 'Simulados com IA (erros viram cartões)', 'Correção de redação ENEM por competência', 'Plano de estudos e cartões por IA'];
+const FREE = ['Pastas por assunto e trilha manual', 'Tarefas, missões e sequência diária', 'Cartões com repetição espaçada', 'Páginas com blocos e modelos', 'Radar de prazos e foco', 'Lembretes no celular'];
+const PLUS = ['Tudo do plano grátis', 'Conversa com o ' + TUCK + ': ele cria cartões, quizzes, resumos, guias e tarefas', 'Trilha montada por IA, com lições que reforçam o que você erra', 'Fontes: links, textos e PDFs para ele ensinar com o seu material', 'Simulados e correção de redação ENEM', 'Análise de edital e captura mágica'];
 
 // Plus: executa o recurso de IA. Grátis: mostra o aviso do Plus.
 export function openPlus(feature) {
@@ -12,17 +12,17 @@ export function openPlus(feature) {
   }
   let close = () => {};
   close = openModal(h('div', { class: 'stack' },
-    h('div', { class: 'row' }, icon('lock', 24), h('h2', { class: 'modal-title' }, 'Recurso do Krisis Plus')),
-    h('p', { class: 'lead' }, (feature || 'Este recurso') + ' faz parte do Krisis Plus. O lançamento está chegando.'),
+    h('div', { class: 'row' }, icon('lock', 24), h('h2', { class: 'modal-title' }, 'Recurso do Eduquack Plus')),
+    h('p', { class: 'lead' }, (feature || 'Este recurso') + ' faz parte do Eduquack Plus. O lançamento está chegando.'),
     h('div', { class: 'row end' }, h('button', { class: 'btn', onclick: () => close() }, 'Agora não'),
       h('a', { class: 'btn primary', href: '#/plus', onclick: () => close() }, 'Ver o que inclui'))));
 }
 
 export function renderPlus(box) {
-  box.append(h('p', { class: 'lead', style: 'margin-bottom:14px' }, 'O plano grátis já cobre o essencial. O Plus coloca a IA para trabalhar nos seus estudos.'),
-    h('div', { class: 'plans' },
-      h('div', { class: 'tile pat pat-dots' }, h('h3', { style: 'font-weight:900' }, 'Grátis'), h('ul', {}, FREE.map((x) => h('li', {}, x)))),
-      h('div', { class: 'tile orange pat pat-stripes' }, h('div', { class: 'row' }, h('h3', { style: 'font-weight:900' }, 'Krisis Plus'), h('span', { class: 'chip plus' }, isPlus() ? 'Ativo' : 'Em breve')),
-        h('ul', {}, PLUS.map((x) => h('li', {}, x))),
+  box.append(h('p', { class: 'lead', style: 'margin-bottom:14px;font-weight:700' }, 'O plano grátis organiza seus estudos. O Plus coloca a IA para fazer o trabalho pesado: você só lê, responde, ouve e clica.'),
+    h('div', { class: 'grid2' },
+      h('div', { class: 'tile pat pat-dots' }, h('h3', { style: 'font-weight:600;font-size:1.3rem' }, 'Grátis'), h('ul', { class: 'alist', style: 'margin-top:8px' }, FREE.map((x) => h('li', {}, x)))),
+      h('div', { class: 'tile butter pat pat-stripes' }, h('div', { class: 'row' }, h('h3', { style: 'font-weight:600;font-size:1.3rem' }, 'Eduquack Plus'), h('span', { class: 'chip plus' }, isPlus() ? 'Ativo' : 'Em breve')),
+        h('ul', { class: 'alist', style: 'margin-top:8px' }, PLUS.map((x) => h('li', {}, x))),
         h('button', { class: 'btn green block', style: 'margin-top:14px', disabled: true }, isPlus() ? 'Você já é Plus' : 'Disponível em breve'))));
 }

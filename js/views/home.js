@@ -1,18 +1,13 @@
-import { sb, h, icon, getStats, getQuests, getHeat, weekDone, countUp, chip, empty, store, isoDay } from '../core.js';
+import { sb, h, icon, getStats, getQuests, getHeat, weekDone, chip, empty, store, isoDay } from '../core.js';
+import { ic } from '../icons.js';
+import { gate } from '../ui.js';
 import { displayName } from '../auth.js';
-import { createKri, bindPoke } from '../mascot.js';
-import { cmdBar } from './command.js';
+import { createTuck } from '../tuck.js';
+import { loadSubjects, loadTopics, progressOf, weakTopics, mastery, isDone } from '../data.js';
 import { parseDeadlines, daysLeft, whenLabel } from './prazos.js';
+import { toolGrid } from './praticar.js';
 
-const LINK = { tarefas: '#/tarefas', revisao: '#/cartoes', foco: '#/foco', edital: '#/analisar' };
-
-function rel(d) {
-  const s = Math.round((Date.now() - new Date(d).getTime()) / 1000);
-  if (s < 60) return 'agora';
-  if (s < 3600) return 'há ' + Math.floor(s / 60) + ' min';
-  if (s < 86400) return 'há ' + Math.floor(s / 3600) + ' h';
-  return 'há ' + Math.floor(s / 86400) + ' d';
-}
+const LINK = { tarefas: '#/tarefas', revisao: '#/cartoes', foco: '#/foco', edital: '#/editais' };
 
 function ring(q) {
   const NS = 'http://www.w3.org/2000/svg';
@@ -28,10 +23,9 @@ function ring(q) {
   return h('span', { class: 'ring-s' }, svg, icon(q.complete ? 'check' : q.ic, 18));
 }
 
-function pl(tone, pat, tag, big, small, href) {
-  const n = h('b', { class: 'n' }, typeof big === 'number' ? '0' : big);
-  if (typeof big === 'number') requestAnimationFrame(() => countUp(n, big));
-  return h('a', { class: 'pl pat pat-' + pat + ' ' + tone, href }, h('div', { class: 'pl-top' }, h('span', { class: 'tag' }, tag), h('span', { class: 'pl-go' }, icon('arrow', 16))), h('div', {}, n, h('small', {}, small)));
+function pl(tone, pat, tag, big, small, href, ai) {
+  const el = h('a', { class: 'pl pat pat-' + pat + ' ' + tone, href }, h('div', { class: 'pl-top' }, h('span', { class: 'tag' }, tag), h('span', { class: 'pl-go' }, icon('arrow', 16))), h('div', {}, h('b', { class: 'n' }, String(big)), h('small', {}, small)));
+  return ai ? gate(el) : el;
 }
 
 function weekStrip() {
@@ -63,54 +57,45 @@ function heatCard() {
 
 export async function renderHome(box) {
   const first = displayName().split(' ')[0];
-  const qs = getQuests();
-  const done = qs.filter((q) => q.complete).length;
-  const xpLeft = qs.filter((q) => !q.complete).reduce((s, q) => s + q.xp, 0);
-  const next = qs.find((q) => !q.complete);
-  const kri = createKri({ size: 120 });
-  bindPoke(kri);
-  box.append(
-    h('section', { class: 'challenge pat pat-dots' },
-      h('div', {}, h('span', { class: 'sticker' }, 'desafio do dia'),
-        h('h2', { style: 'margin-top:8px' }, done === qs.length ? 'Dia perfeito!' : 'Faltam ' + (qs.length - done) + (qs.length - done === 1 ? ' missão' : ' missões')),
-        h('p', {}, done === qs.length ? 'Você fez tudo hoje. Volte amanhã!' : 'Ganhe até +' + xpLeft + ' XP ainda hoje, ' + first + '.'),
-        h('div', { class: 'pbar' }, h('i', { style: 'width:' + Math.round(done / qs.length * 100) + '%' })),
-        next ? h('a', { class: 'btn green', href: LINK[next.k] }, next.t) : null),
-      kri.el),
-    h('div', { class: 'cmd-wrap' }, cmdBar()),
-    weekStrip());
-
   const now = new Date().toISOString();
-  const [c, t, p, tk, e] = await Promise.all([
+  const [subs, topics, c, t, e] = await Promise.all([
+    loadSubjects(), loadTopics(),
     sb.from('flashcards').select('id', { count: 'exact', head: true }).lte('due_at', now),
     sb.from('tasks').select('id', { count: 'exact', head: true }).eq('done', false),
-    sb.from('pages').select('id,title,updated_at').eq('is_archived', false).order('updated_at', { ascending: false }).limit(5),
-    sb.from('tasks').select('id,title,done,created_at').order('created_at', { ascending: false }).limit(5),
     sb.from('editais_salvos').select('id,titulo,analysis,created_at').order('created_at', { ascending: false }).limit(60)
   ]);
-  const due = c.count || 0, open = t.count || 0, eds = e.data || [];
-  const dls = parseDeadlines(eds).filter((d) => daysLeft(d.date) >= 0).slice(0, 3);
-  const feedItems = [
-    ...(p.data || []).map((x) => ({ t: x.updated_at, ic: 'file', tx: 'Você editou ', b: x.title || 'Sem título', href: '#/pagina/' + x.id })),
-    ...(tk.data || []).map((x) => ({ t: x.created_at, ic: 'check', tx: x.done ? 'Tarefa concluída: ' : 'Nova tarefa: ', b: x.title, href: '#/tarefas' })),
-    ...eds.slice(0, 5).map((x) => ({ t: x.created_at, ic: 'folder', tx: 'Edital salvo: ', b: x.titulo, href: '#/editais' }))
-  ].sort((a, b) => new Date(b.t) - new Date(a.t)).slice(0, 7);
+  const due = c.count || 0, open = t.count || 0;
+  const dls = parseDeadlines(e.data || []).filter((d) => daysLeft(d.date) >= 0).slice(0, 3);
+  const cur = subs.find((s) => s.id === store.get('eduquack.subject', null)) || subs[0];
+  const curTopics = cur ? topics.filter((x) => x.subject_id === cur.id) : [];
+  const prog = progressOf(curTopics);
+  const next = curTopics.find((x) => !isDone(x));
+  const tuck = createTuck({ size: 124 });
 
-  box.append(
-    h('div', { class: 'plan' },
-      pl('lime', 'dots', 'Revisar', due, due === 1 ? 'cartão pronto' : 'cartões prontos', '#/cartoes'),
-      pl('sky', 'stripes', 'Tarefas', open, open === 1 ? 'tarefa aberta' : 'tarefas abertas', '#/tarefas'),
-      pl('butter', 'checks', 'Radar', dls.length ? whenLabel(daysLeft(dls[0].date)) : 'Sem prazos', dls.length ? dls[0].label.slice(0, 40) : 'Salve um edital', '#/prazos'),
-      pl('ink', 'waves', 'Mágico', 'Jogue aqui', 'Eu organizo seu material', '#/magico')),
-    h('div', { class: 'home-grid' },
-      h('div', { class: 'col' }, missionsCard(), heatCard()),
-      h('div', { class: 'col' },
-        h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Próximos prazos'), h('a', { class: 'link', href: '#/prazos' }, 'Ver todos')),
-          dls.length
-            ? h('div', { class: 'feed' }, dls.map((d) => { const n = daysLeft(d.date); return h('a', { class: 'feed-i', href: '#/prazos' }, h('span', { class: 'feed-ic' }, icon('calendar', 16)), h('div', { class: 'feed-b' }, h('b', {}, d.label), h('span', { class: 'muted' }, d.edital)), chip(whenLabel(n), n <= 3 ? 'rose' : 'blue')); }))
-            : h('p', { class: 'muted' }, 'Salve um edital para ver os prazos aqui.')),
-        h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Atividade recente')),
-          feedItems.length
-            ? h('div', { class: 'feed' }, feedItems.map((f) => h('a', { class: 'feed-i', href: f.href }, h('span', { class: 'feed-ic' }, icon(f.ic, 16)), h('div', { class: 'feed-b' }, h('span', {}, f.tx), h('b', {}, f.b)), h('span', { class: 'muted feed-t' }, rel(f.t)))))
-            : empty('Nada por aqui ainda', 'Crie uma página ou uma tarefa e ela aparece neste feed.')))));
+  box.append(h('section', { class: 'challenge pat pat-dots' },
+    h('div', {}, h('span', { class: 'sticker' }, 'oi, ' + first),
+      h('h2', { style: 'margin-top:8px' }, cur ? 'Continue em ' + cur.name : 'Vamos começar?'),
+      h('p', {}, cur ? (next ? 'Próximo tópico: ' + next.title : curTopics.length ? 'Trilha concluída! Revise os pontos fracos.' : 'Adicione tópicos para montar a trilha.') : 'Crie uma pasta para o que você quer aprender e eu monto o caminho.'),
+      cur ? h('div', { class: 'bar' }, h('i', { style: 'width:' + prog.pct + '%' })) : null,
+      h('a', { class: 'btn green', href: cur ? '#/trilha/' + cur.id : '#/pastas' }, cur ? 'Continuar trilha' : 'Criar minha primeira pasta')),
+    tuck.el));
+  box.append(weekStrip());
+  box.append(h('div', { class: 'grid4', style: 'margin-bottom:14px' },
+    pl('lime', 'dots', 'Revisar', due, due === 1 ? 'cartão pronto' : 'cartões prontos', '#/cartoes'),
+    pl('sky', 'stripes', 'Tarefas', open, open === 1 ? 'tarefa aberta' : 'tarefas abertas', '#/tarefas'),
+    pl('butter', 'checks', 'Radar', dls.length ? whenLabel(daysLeft(dls[0].date)) : 'Sem prazos', dls.length ? dls[0].label.slice(0, 36) : 'Salve um edital', '#/prazos'),
+    pl('ink', 'waves', 'Tuck', 'Conversar', 'Peça cartões, quiz e guias', '#/tuck', true)));
+
+  const weak = weakTopics(topics).slice(0, 4);
+  const weakCard = h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Pontos para melhorar')),
+    weak.length ? h('div', { class: 'list' }, weak.map((x) => { const s = subs.find((y) => y.id === x.subject_id); return h('a', { class: 'item', href: '#/trilha/' + x.subject_id }, ic('target', 18), h('div', { class: 'item-t' }, h('b', {}, x.title), h('div', { class: 'muted', style: 'font-size:.8rem' }, s ? s.name : ''), h('div', { class: 'bar', style: 'height:8px;margin-top:4px' }, h('i', { style: 'width:' + Math.round(mastery(x) * 100) + '%' }))), chip(Math.round(mastery(x) * 100) + '%', 'rose')); })) : h('p', { class: 'muted' }, 'Faça licões na trilha e eu mostro aqui o que você mais precisa treinar.'));
+
+  const subjCard = h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Suas pastas'), h('a', { class: 'link', href: '#/pastas' }, 'Ver todas')),
+    subs.length ? h('div', { class: 'list' }, subs.slice(0, 5).map((s) => { const p = progressOf(topics.filter((x) => x.subject_id === s.id)); return h('a', { class: 'item', href: '#/pasta/' + s.id }, ic('folder', 18), h('div', { class: 'item-t' }, h('b', {}, s.name), h('div', { class: 'bar', style: 'height:8px;margin-top:4px' }, h('i', { style: 'width:' + p.pct + '%' }))), chip(p.pct + '%', 'blue')); })) : empty('Nenhuma pasta', 'Crie a primeira para ver o progresso aqui.', h('a', { class: 'btn primary', href: '#/pastas' }, 'Criar pasta')));
+
+  const dlCard = h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Próximos prazos'), h('a', { class: 'link', href: '#/prazos' }, 'Ver todos')),
+    dls.length ? h('div', { class: 'feed' }, dls.map((d) => { const n = daysLeft(d.date); return h('a', { class: 'feed-i', href: '#/prazos' }, h('span', { class: 'feed-ic' }, icon('calendar', 16)), h('div', { class: 'feed-b' }, h('b', {}, d.label), h('span', { class: 'muted' }, d.edital)), chip(whenLabel(n), n <= 3 ? 'rose' : 'blue')); })) : h('p', { class: 'muted' }, 'Salve um edital para ver os prazos aqui.'));
+
+  box.append(h('div', { class: 'home-grid' }, h('div', { class: 'col' }, missionsCard(), weakCard, heatCard()), h('div', { class: 'col' }, subjCard, dlCard)));
+  box.append(h('section', { style: 'margin-top:18px' }, h('h3', { class: 'panel-title' }, 'Ferramentas'), toolGrid()));
 }
