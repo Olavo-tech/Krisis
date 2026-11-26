@@ -44,7 +44,7 @@ const NAV = [
   ['Estudo', [['#/analisar', 'scan', 'Analisar edital'], ['#/editais', 'folder', 'Meus editais'], ['#/prazos', 'calendar', 'Prazos'], ['#/tarefas', 'check', 'Tarefas'], ['#/cartoes', 'cards', 'Cartões'], ['#/foco', 'timer', 'Foco']]]
 ];
 const TABS = [
-  ['#/hoje', 'home', 'Hoje', ['hoje']],
+  ['#/hoje', 'home', 'Trilha', ['hoje']],
   ['#/estudar', 'grid', 'Estudar', ['estudar', 'analisar', 'editais', 'prazos', 'tarefas', 'foco', 'pagina', 'plus']],
   ['#/magico', 'wand', 'Mágico', ['magico']],
   ['#/cartoes', 'cards', 'Revisar', ['cartoes']],
@@ -89,12 +89,12 @@ function buildShell() {
         h('span', { class: 'avatar' }, (name[0] || 'K').toUpperCase()),
         h('span', {}, h('div', { class: 'acct-name' }, name), h('div', { class: 'acct-sub' }, isPlus() ? 'Plus' : 'Plano grátis')))));
   const top = h('header', { class: 'top' },
-    h('button', { class: 'm-avatar', 'aria-label': 'Meu perfil', onclick: () => { location.hash = '#/eu'; } }, (name[0] || 'K').toUpperCase()),
-    h('div', { class: 'crumb' }, icon('home', 18), h('span', { class: 'muted' }, 'Visão geral'), h('span', { class: 'muted' }, '/'), h('b', { id: 'topTitle' })),
+    h('div', { class: 'crumb' }, icon('home', 18), h('span', { class: 'muted' }, 'Visão geral'), h('span', { class: 'muted' }, '/'), h('b', { id: 'topTitle' }), h('b', { class: 'mobile-brand' }, 'Krisis')),
     h('button', { class: 'search-pill', onclick: openPalette, 'aria-label': 'Buscar ou criar' }, icon('search', 16), h('span', { class: 't' }, 'Buscar ou criar…'), h('kbd', {}, 'Ctrl K')),
     h('div', { class: 'top-stats', id: 'topStats' }),
     h('button', { class: 'icon-btn', id: 'themeBtn', 'aria-label': 'Alternar tema', onclick: toggleTheme }, icon(theme === 'dark' ? 'sun' : 'moon')));
-  const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Navegação' }, TABS.map(([href, i, label, grp]) => h('a', { class: 'tab' + (i === 'wand' ? ' magic' : ''), href, 'data-g': grp.join(','), 'aria-label': label }, ic(i, i === 'wand' ? 28 : 24))));
+  const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Navegação' }, TABS.map(([href, i, label, grp]) => h('a', { class: 'tab', href, 'data-g': grp.join(',') },
+    h('span', { class: 'tab-icon' }, ic(i, 23)), h('span', {}, label))));
   return h('div', { class: 'shell' }, side,
     h('main', { class: 'main' }, top, h('div', { class: 'ticker', id: 'ticker', 'aria-label': 'Prazos próximos' }), h('div', { id: 'view', class: 'view' })), tabbar);
 }
@@ -151,7 +151,12 @@ async function route() {
   document.body.dataset.route = seg;
   document.getElementById('topTitle').textContent = seg === 'hoje' ? 'Oi, ' + displayName().split(' ')[0] + '!' : title;
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.r === seg));
-  document.querySelectorAll('.tab').forEach((a) => a.classList.toggle('active', a.dataset.g.split(',').includes(seg)));
+  document.querySelectorAll('.tab').forEach((a) => {
+    const active = a.dataset.g.split(',').includes(seg);
+    a.classList.toggle('active', active);
+    if (active) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
   moveIndicator();
   const box = h('div', { class: 'view-inner' });
   document.getElementById('view').replaceChildren(box);

@@ -66,7 +66,13 @@ export default async function handler(req, res) {
   if (applyCors(req, res)) return;
   const cfg = readEnv();
   if (!cfg) return res.status(500).json({ ok: false, code: 'SERVER_CONFIG_ERROR', message: 'Servidor não configurado.' });
-  const userId = await getUserId(cfg, req);
+  let userId;
+  try {
+    userId = await getUserId(cfg, req);
+  } catch (error) {
+    console.error('[ai] sessão:', error.message);
+    return res.status(503).json({ ok: false, code: 'AUTH_CHECK_FAILED', message: 'Não foi possível validar sua conta agora. Tente novamente.' });
+  }
   if (!userId) return res.status(401).json({ ok: false, code: 'UNAUTHORIZED', message: 'Entre na sua conta para usar este recurso.' });
 
   const body = req.body || {};
@@ -87,12 +93,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const out = await groqJson(cfg.GROQ_API_KEY, built.system, built.user);
-    const result = clean(action, out.data);
-    if (!result) throw new Error('empty');
+    const { data: result } = await groqJson(cfg.GROQ_API_KEY, built.system, built.user, (data) => clean(action, data));
     return res.status(200).json({ ok: true, result, quota: { dailyRemaining: q.remaining } });
   } catch (_) {
-    await refundQuota(cfg, userId, built.feature);
-    return res.status(502).json({ ok: false, code: 'AI_UPSTREAM_ERROR', message: 'A IA não conseguiu agora. Seu uso não foi descontado. Tente de novo.' });
+    const refunded = await refundQuota(cfg, userId, built.feature);
+    const message = refunded
+      ? 'A IA não respondeu. Seu uso foi devolvido. Tente novamente.'
+      : 'A IA não respondeu agora. Tente novamente em instantes.';
+    return res.status(502).json({ ok: false, code: 'AI_UPSTREAM_ERROR', message });
   }
 }

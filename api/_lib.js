@@ -28,29 +28,41 @@ export function applyCors(req, res) {
 }
 
 export function readEnv() {
-  const { GROQ_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
-  if (!GROQ_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
-  return { GROQ_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY };
+  const GROQ_API_KEY = process.env.GROQ_API_KEY?.trim();
+  const SUPABASE_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
+  const serverKey = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
+  const authKey = (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)?.trim() || serverKey;
+  if (!GROQ_API_KEY || !SUPABASE_URL || !serverKey) return null;
+  return { GROQ_API_KEY, SUPABASE_URL, serverKey, authKey };
 }
 
 export async function getUserId(cfg, req) {
-  const h = req.headers.authorization || '';
-  const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
+  const token = (req.headers.authorization || '').match(/^Bearer\s+(.+)$/i)?.[1].trim();
   if (!token) return null;
-  try {
-    const r = await fetch(`${cfg.SUPABASE_URL}/auth/v1/user`, { headers: { apikey: cfg.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${token}` } });
-    if (!r.ok) return null;
-    const u = await r.json();
-    return u && u.id ? u.id : null;
-  } catch (_) { return null; }
+  const r = await fetch(`${cfg.SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: cfg.authKey, Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(5000)
+  });
+  if (r.status === 400 || r.status === 401 || r.status === 403) {
+    const body = await r.json().catch(() => null);
+    if (body?.message === 'Invalid API key') throw new Error('auth api key rejected');
+    return null;
+  }
+  if (!r.ok) throw new Error('auth status ' + r.status);
+  const user = await r.json();
+  return user?.id || null;
 }
 
-const rpcHeaders = (cfg) => ({ 'Content-Type': 'application/json', apikey: cfg.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${cfg.SUPABASE_SERVICE_ROLE_KEY}` });
+function rpcHeaders(cfg) {
+  const headers = { 'Content-Type': 'application/json', apikey: cfg.serverKey };
+  if (!cfg.serverKey.startsWith('sb_secret_')) headers.Authorization = `Bearer ${cfg.serverKey}`;
+  return headers;
+}
 
 // freeLimit = 0 bloqueia o plano grátis (recurso exclusivo do Plus).
 export async function consumeQuota(cfg, userId, feature, freeLimit, plusLimit) {
   const r = await fetch(`${cfg.SUPABASE_URL}/rest/v1/rpc/consume_ai_quota`, {
-    method: 'POST', headers: rpcHeaders(cfg),
+    method: 'POST', headers: rpcHeaders(cfg), signal: AbortSignal.timeout(5000),
     body: JSON.stringify({ p_user_id: userId, p_feature: feature, p_free_limit: freeLimit, p_plus_limit: plusLimit })
   });
   if (!r.ok) throw new Error('quota rpc ' + r.status);
@@ -62,37 +74,57 @@ export async function consumeQuota(cfg, userId, feature, freeLimit, plusLimit) {
 
 export async function refundQuota(cfg, userId, feature) {
   try {
-    await fetch(`${cfg.SUPABASE_URL}/rest/v1/rpc/refund_ai_quota`, { method: 'POST', headers: rpcHeaders(cfg), body: JSON.stringify({ p_user_id: userId, p_feature: feature }) });
-  } catch (_) { /* melhor esforço */ }
-}
-
-const DEFAULT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-
-function parseJson(raw) {
-  try { return JSON.parse(raw); } catch (_) {
-    const m = String(raw || '').match(/\{[\s\S]*\}/);
-    if (!m) return null;
-    try { return JSON.parse(m[0]); } catch (_e) { return null; }
+    const response = await fetch(`${cfg.SUPABASE_URL}/rest/v1/rpc/refund_ai_quota`, {
+      method: 'POST', headers: rpcHeaders(cfg), signal: AbortSignal.timeout(4000),
+      body: JSON.stringify({ p_user_id: userId, p_feature: feature })
+    });
+    if (response.ok) return true;
+    console.error('[ai] devolução da cota:', response.status, feature);
+  } catch (error) {
+    console.error('[ai] devolução da cota:', error.name, feature);
   }
+  return false;
 }
 
-export async function groqJson(apiKey, system, user) {
-  const fromEnv = String(process.env.GROQ_MODELS || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const models = fromEnv.length ? fromEnv : DEFAULT_MODELS;
-  const errors = [];
+const DEFAULT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile'];
+
+export async function groqJson(apiKey, system, user, validate) {
+  const configured = (process.env.GROQ_MODELS || '').split(',').map((model) => model.trim()).filter(Boolean);
+  const models = new Set([...configured, ...DEFAULT_MODELS]);
+  const deadline = Date.now() + 35000;
+  const failures = [];
   for (const model of models) {
+    const budget = Math.min(15000, deadline - Date.now());
+    if (budget <= 0) break;
+    const reasoning = /^openai\/gpt-oss/i.test(model);
+    const body = {
+      model, temperature: 0.2, response_format: { type: 'json_object' },
+      max_completion_tokens: reasoning ? 6000 : 3500,
+      ...(reasoning ? { reasoning_effort: 'low', reasoning_format: 'hidden' } : {}),
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }]
+    };
     try {
-      const body = { model, temperature: 0.3, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
-      if (/^openai\/gpt-oss/i.test(model)) { body.reasoning_effort = 'low'; body.max_completion_tokens = 6000; } else { body.max_tokens = 3500; }
-      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` }, body: JSON.stringify(body) });
-      if (!r.ok) { const t = await r.text(); errors.push(`HTTP ${r.status} ${model}: ${t.slice(0, 120)}`); if (r.status === 401 || r.status === 403) break; continue; }
-      const j = await r.json();
-      const parsed = parseJson(j?.choices?.[0]?.message?.content || '');
-      if (parsed) return { data: parsed, model };
-      errors.push(`JSON inválido (${model})`);
-    } catch (e) { errors.push(`${model}: ${e && e.message}`); }
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST', signal: AbortSignal.timeout(budget),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        failures.push(model + ' HTTP ' + response.status);
+        if (response.status === 401 || response.status === 403) break;
+        continue;
+      }
+      const completion = await response.json();
+      const raw = completion?.choices?.[0]?.message?.content || '';
+      const parsed = JSON.parse(raw.replace(/^\s*```(?:json)?\s*|\s*```\s*$/gi, ''));
+      const data = parsed && typeof parsed === 'object' && !Array.isArray(parsed) && validate(parsed);
+      if (data) return { data, model };
+      failures.push(model + ' formato inválido');
+    } catch (error) {
+      failures.push(model + ' ' + error.name);
+    }
   }
-  console.error('[ai] falha:', errors.join(' | '));
+  console.error('[ai] Groq:', failures.join(' | '));
   throw new Error('ai_failed');
 }
 

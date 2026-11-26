@@ -45,7 +45,7 @@ function tick() {
   beep();
   if (wasFocus) {
     store.set(todayKey(), store.get(todayKey(), 0) + 1);
-    addXp(20);
+    addXp(20, 'foco');
     toast('Ciclo de foco concluído! +20 XP', 'ok');
     setMode('pausa');
   } else {

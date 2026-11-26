@@ -1,5 +1,4 @@
-import { sb, h, icon, getStats, getQuests, getHeat, weekDone, countUp, chip, empty, store, isoDay } from '../core.js';
-import { displayName } from '../auth.js';
+import { sb, h, icon, getQuests, getHeat, weekDone, countUp, chip, empty, store, isoDay } from '../core.js';
 import { createKri, bindPoke } from '../mascot.js';
 import { cmdBar } from './command.js';
 import { parseDeadlines, daysLeft, whenLabel } from './prazos.js';
@@ -12,20 +11,6 @@ function rel(d) {
   if (s < 3600) return 'há ' + Math.floor(s / 60) + ' min';
   if (s < 86400) return 'há ' + Math.floor(s / 3600) + ' h';
   return 'há ' + Math.floor(s / 86400) + ' d';
-}
-
-function ring(q) {
-  const NS = 'http://www.w3.org/2000/svg';
-  const C = 2 * Math.PI * 18;
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('class', 'r'); svg.setAttribute('viewBox', '0 0 44 44');
-  const mk = (stroke) => { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', '22'); c.setAttribute('cy', '22'); c.setAttribute('r', '18'); c.setAttribute('fill', 'none'); c.setAttribute('stroke', stroke); c.setAttribute('stroke-width', '4'); c.setAttribute('stroke-linecap', 'round'); return c; };
-  const arc = mk('currentColor');
-  arc.setAttribute('stroke-dasharray', String(C)); arc.setAttribute('stroke-dashoffset', String(C));
-  arc.style.transition = 'stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)';
-  svg.append(mk('var(--line)'), arc);
-  requestAnimationFrame(() => requestAnimationFrame(() => arc.setAttribute('stroke-dashoffset', String(C * (1 - q.done / q.n)))));
-  return h('span', { class: 'ring-s' }, svg, icon(q.complete ? 'check' : q.ic, 18));
 }
 
 function pl(tone, pat, tag, big, small, href) {
@@ -45,12 +30,30 @@ function weekStrip() {
   }));
 }
 
-function missionsCard() {
-  const qs = getQuests();
-  const done = qs.filter((q) => q.complete).length;
-  return h('section', { class: 'card' },
-    h('div', { class: 'card-h' }, h('h3', {}, 'Missões do dia'), chip(done === qs.length ? 'Dia perfeito' : done + ' de ' + qs.length, done === qs.length ? 'green' : '')),
-    h('div', { class: 'quests' }, qs.map((q) => h('a', { class: 'quest' + (q.complete ? ' done' : ''), href: LINK[q.k] }, ring(q), h('div', { class: 'q-b' }, h('b', {}, q.t), h('span', { class: 'muted' }, q.done + ' de ' + q.n)), chip('+' + q.xp + ' XP', q.complete ? 'green' : 'blue')))));
+const STEPS = [
+  { key: 'foco', title: 'Fazer uma sessão de foco', tone: 'peach', offset: 0 },
+  { key: 'revisao', title: 'Revisar cartões', tone: 'violet', offset: -1 },
+  { key: 'tarefas', title: 'Concluir tarefas', tone: 'mint', offset: 0 },
+  { key: 'edital', title: 'Analisar um edital', tone: 'gold', offset: 1 }
+];
+
+function trailSteps(due, open) {
+  const quests = getQuests();
+  const steps = STEPS.map((step) => ({ ...quests.find((q) => q.k === step.key), ...step }));
+  const available = { foco: true, revisao: due > 0, tarefas: open > 0, edital: true };
+  const next = steps.find((step) => !step.complete && available[step.key]);
+  const href = (step) => step.key === 'revisao' && due ? '#/cartoes/revisar' : LINK[step.key];
+
+  return h('ol', { class: 'trail-steps' }, steps.map((step) => {
+    const current = step === next;
+    const status = step.complete ? 'Concluído' : step.n > 1 ? step.done + ' de ' + step.n : '';
+    return h('li', { class: 'trail-step', style: '--offset:' + step.offset },
+      h('a', { class: 'trail-link ' + step.tone + (current ? ' current' : ''), href: href(step), title: step.t + ' (+' + step.xp + ' XP)',
+        'aria-current': current ? 'step' : null },
+        h('span', { class: 'trail-icon' }, icon(step.complete ? 'check' : step.ic, 25)),
+        h('span', { class: 'trail-label' }, current ? h('small', {}, 'Próximo passo') : null,
+          h('strong', {}, step.title), status ? h('small', {}, status) : null)));
+  }));
 }
 
 function heatCard() {
@@ -62,23 +65,23 @@ function heatCard() {
 }
 
 export async function renderHome(box) {
-  const first = displayName().split(' ')[0];
-  const qs = getQuests();
-  const done = qs.filter((q) => q.complete).length;
-  const xpLeft = qs.filter((q) => !q.complete).reduce((s, q) => s + q.xp, 0);
-  const next = qs.find((q) => !q.complete);
-  const kri = createKri({ size: 120 });
+  const trail = h('section', { class: 'trail', 'aria-labelledby': 'trail-title' });
+  const quests = getQuests();
+  const done = quests.filter((quest) => quest.complete).length;
+  const kri = createKri({ size: 122 });
   bindPoke(kri);
-  box.append(
-    h('section', { class: 'challenge pat pat-dots' },
-      h('div', {}, h('span', { class: 'sticker' }, 'desafio do dia'),
-        h('h2', { style: 'margin-top:8px' }, done === qs.length ? 'Dia perfeito!' : 'Faltam ' + (qs.length - done) + (qs.length - done === 1 ? ' missão' : ' missões')),
-        h('p', {}, done === qs.length ? 'Você fez tudo hoje. Volte amanhã!' : 'Ganhe até +' + xpLeft + ' XP ainda hoje, ' + first + '.'),
-        h('div', { class: 'pbar' }, h('i', { style: 'width:' + Math.round(done / qs.length * 100) + '%' })),
-        next ? h('a', { class: 'btn green', href: LINK[next.k] }, next.t) : null),
-      kri.el),
+  trail.append(h('div', { class: 'trail-head' },
+    h('div', {}, h('h2', { id: 'trail-title' }, 'Sua trilha de hoje'),
+      h('p', {}, done === quests.length ? 'Missões de hoje concluídas' : done + ' de ' + quests.length + ' missões concluídas')),
+    h('progress', { max: quests.length, value: done, 'aria-label': 'Missões concluídas' })),
+    h('div', { class: 'trail-map' }, trailSteps(0, 0), h('div', { class: 'trail-kri' }, kri.el)));
+  const more = h('details', { class: 'home-more' },
+    h('summary', {}, 'Meu painel'),
     h('div', { class: 'cmd-wrap' }, cmdBar()),
     weekStrip());
+  const desktop = window.matchMedia('(min-width: 901px)');
+  more.open = desktop.matches;
+  box.append(trail, more);
 
   const now = new Date().toISOString();
   const [c, t, p, tk, e] = await Promise.all([
@@ -96,14 +99,27 @@ export async function renderHome(box) {
     ...eds.slice(0, 5).map((x) => ({ t: x.created_at, ic: 'folder', tx: 'Edital salvo: ', b: x.titulo, href: '#/editais' }))
   ].sort((a, b) => new Date(b.t) - new Date(a.t)).slice(0, 7);
 
-  box.append(
+  if (due || open) {
+    const links = trailSteps(due, open).querySelectorAll('.trail-link');
+    // Keep the focused link and the mascot instance while the counts load.
+    trail.querySelector('.trail-steps').querySelectorAll('a').forEach((link, i) => {
+      const updated = links[i];
+      if (link.className === updated.className && link.hash === updated.hash) return;
+      link.className = updated.className;
+      link.setAttribute('href', updated.getAttribute('href'));
+      if (updated.hasAttribute('aria-current')) link.setAttribute('aria-current', 'step');
+      else link.removeAttribute('aria-current');
+      link.lastElementChild.replaceChildren(...updated.lastElementChild.childNodes);
+    });
+  }
+  more.append(
     h('div', { class: 'plan' },
       pl('lime', 'dots', 'Revisar', due, due === 1 ? 'cartão pronto' : 'cartões prontos', '#/cartoes'),
       pl('sky', 'stripes', 'Tarefas', open, open === 1 ? 'tarefa aberta' : 'tarefas abertas', '#/tarefas'),
       pl('butter', 'checks', 'Radar', dls.length ? whenLabel(daysLeft(dls[0].date)) : 'Sem prazos', dls.length ? dls[0].label.slice(0, 40) : 'Salve um edital', '#/prazos'),
       pl('ink', 'waves', 'Mágico', 'Jogue aqui', 'Eu organizo seu material', '#/magico')),
     h('div', { class: 'home-grid' },
-      h('div', { class: 'col' }, missionsCard(), heatCard()),
+      h('div', { class: 'col' }, heatCard()),
       h('div', { class: 'col' },
         h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Próximos prazos'), h('a', { class: 'link', href: '#/prazos' }, 'Ver todos')),
           dls.length

@@ -54,6 +54,11 @@ function iosHint() {
 export function tapToStart() {
   return new Promise((resolve) => {
     if (!isMobile() || isStandalone() || inFullscreen()) { resolve(false); return; }
+    if (store.get('krisis.welcomeSeen', false)) {
+      stickyFullscreen();
+      resolve(false);
+      return;
+    }
     const kri = createKri({ size: 200 });
     kri.setMood('sleep');
     const ov = h('div', { class: 'tts', role: 'button', tabindex: '0', 'aria-label': 'Toque para come\u00e7ar' },
@@ -67,7 +72,8 @@ export function tapToStart() {
       if (busy) return; busy = true;
       sfx.unlock(); sfx.hello(); haptic(20);
       kri.setMood('cheer', 1200);
-      await enterFullscreen();
+      if (store.get('krisis.fs', true)) await enterFullscreen();
+      store.set('krisis.welcomeSeen', true);
       stickyFullscreen();
       ov.classList.add('out');
       setTimeout(() => { ov.remove(); resolve(true); iosHint(); }, 560);

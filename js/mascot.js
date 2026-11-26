@@ -6,31 +6,33 @@ import { sfx } from './sfx.js';
 export const MASCOT = 'Krispim';
 
 const SVG = `<svg viewBox="0 0 220 230" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<ellipse cx="110" cy="222" rx="58" ry="7" fill="rgba(11,11,15,.16)"/>
+<ellipse cx="110" cy="215" rx="63" ry="8" fill="#492616" opacity=".14"/>
 <g class="k-all">
-<ellipse cx="80" cy="212" rx="21" ry="10" fill="#0b0b0f"/><ellipse cx="140" cy="212" rx="21" ry="10" fill="#0b0b0f"/>
-<g class="k-arm-l"><g class="k-sway"><ellipse cx="24" cy="176" rx="13" ry="30" fill="#e5560a"/></g></g>
-<g class="k-arm-r"><g class="k-sway k-sway2"><ellipse cx="196" cy="176" rx="13" ry="30" fill="#e5560a"/></g></g>
-<g class="k-ant"><path d="M110 44 C110 28 118 20 132 22" stroke="#0b0b0f" stroke-width="6" stroke-linecap="round" fill="none"/><g class="k-leaf"><path d="M132 22 C138 8 156 8 160 15 C154 26 141 28 132 22 Z" fill="#0b0b0f"/></g></g>
-<path d="M110 38 C170 38 202 82 202 132 C202 180 166 206 110 206 C54 206 18 180 18 132 C18 82 50 38 110 38 Z" fill="#ff6a13"/>
-<ellipse cx="110" cy="176" rx="50" ry="28" fill="#ffe0c2"/>
-<ellipse cx="56" cy="84" rx="16" ry="8" transform="rotate(-32 56 84)" fill="#fff" opacity=".32"/>
-<g class="k-band"><path d="M22 92 Q110 60 198 92" stroke="#0b0b0f" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M198 92 l18 -8 M198 92 l16 14" stroke="#0b0b0f" stroke-width="6" stroke-linecap="round"/></g>
-<path class="k-brow k-brow-l" d="M52 68 Q76 54 100 66" stroke="#0b0b0f" stroke-width="7" stroke-linecap="round" fill="none"/>
-<path class="k-brow k-brow-r" d="M120 66 Q144 54 168 68" stroke="#0b0b0f" stroke-width="7" stroke-linecap="round" fill="none"/>
-<g class="k-eye k-eye-l"><circle cx="78" cy="114" r="30" fill="#fff"/><g class="k-pupil"><circle cx="78" cy="118" r="15" fill="#0b0b0f"/><circle cx="72" cy="111" r="6" fill="#fff"/><circle cx="86" cy="126" r="2.8" fill="#fff" opacity=".8"/></g></g>
-<g class="k-eye k-eye-r"><circle cx="142" cy="114" r="30" fill="#fff"/><g class="k-pupil"><circle cx="142" cy="118" r="15" fill="#0b0b0f"/><circle cx="136" cy="111" r="6" fill="#fff"/><circle cx="150" cy="126" r="2.8" fill="#fff" opacity=".8"/></g></g>
-<g class="k-sleepeyes" fill="none" stroke="#0b0b0f" stroke-width="6" stroke-linecap="round"><path d="M52 118 Q78 138 104 118"/><path d="M116 118 Q142 138 168 118"/></g>
-<ellipse cx="44" cy="152" rx="11" ry="7" fill="#ff4a1a" opacity=".35"/><ellipse cx="176" cy="152" rx="11" ry="7" fill="#ff4a1a" opacity=".35"/>
-<circle cx="104" cy="150" r="3" fill="#b83f00"/><circle cx="116" cy="150" r="3" fill="#b83f00"/>
-<path class="k-m k-m-idle" d="M94 163 Q110 175 126 163" stroke="#0b0b0f" stroke-width="5" stroke-linecap="round" fill="none"/>
-<g class="k-m k-m-happy"><path d="M92 160 Q110 194 128 160 Z" fill="#0b0b0f"/><ellipse cx="110" cy="175" rx="9" ry="5.5" fill="#ff6a8b"/></g>
-<path class="k-m k-m-sad" d="M96 174 Q110 161 124 174" stroke="#0b0b0f" stroke-width="5" stroke-linecap="round" fill="none"/>
-<ellipse class="k-m k-m-o" cx="110" cy="169" rx="7" ry="9" fill="#0b0b0f"/>
-<path class="k-m k-m-sleep" d="M102 168 Q110 173 118 168" stroke="#0b0b0f" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-<g class="k-zzz"><text class="kz1" x="168" y="78" font-size="22" font-weight="800" fill="#0b0b0f">z</text><text class="kz2" x="184" y="54" font-size="28" font-weight="800" fill="#0b0b0f">Z</text></g>
+<path d="M86 192c-14 0-26 7-27 14-2 9 25 12 39 5 4-2 5-10 1-15zM134 192c14 0 26 7 27 14 2 9-25 12-39 5-4-2-5-10-1-15z" fill="#c75120"/>
+<path d="M103 99c-37-6-59 15-61 48-2 36 24 58 68 58 43 0 70-23 68-58-2-36-29-56-75-48Z" fill="#f39342"/>
+<path d="M110 140c-25 0-47 13-47 32 0 17 22 27 47 27s47-10 47-27c0-19-22-32-47-32z" fill="#ffe0a2"/>
+<g class="k-arm-l"><g class="k-sway"><path d="M66 124c-25 0-42 20-38 42 1 5 6 8 11 7 21-4 34-17 38-37 1-6-5-12-11-12Z" fill="#e57433"/><path d="M39 163c9-3 16-9 21-15" stroke="#bb541f" stroke-width="3" fill="none" stroke-linecap="round"/></g></g>
+<g class="k-arm-r"><g class="k-sway k-sway2"><path d="M154 124c25 0 42 20 38 42-1 5-6 8-11 7-21-4-34-17-38-37-1-6 5-12 11-12Z" fill="#e57433"/><path d="M181 163c-9-3-16-9-21-15" stroke="#bb541f" stroke-width="3" fill="none" stroke-linecap="round"/></g></g>
+<path d="M107 41c-38 0-65 25-65 59 0 30 26 51 67 51 41 0 69-19 69-51 0-34-30-59-71-59z" fill="#ffbb64"/>
+<path d="M56 83c8-15 22-25 40-29" fill="none" stroke="#ffd99b" stroke-width="7" stroke-linecap="round"/>
+<g class="k-ant"><path d="M109 47c-3-15 4-26 14-29 3 10 0 19-8 27 8-8 18-9 27-5-5 10-19 15-33 7Z" fill="#ff9d49"/></g>
+<path class="k-band" d="M47 88q62-26 126 0" stroke="#462a42" stroke-width="8" stroke-linecap="round" fill="none"/>
+<path class="k-brow k-brow-l" d="M70 86q11-8 22-2" stroke="#653019" stroke-width="4" stroke-linecap="round" fill="none"/>
+<path class="k-brow k-brow-r" d="M128 84q11-6 22 2" stroke="#653019" stroke-width="4" stroke-linecap="round" fill="none"/>
+<g class="k-eye k-eye-l"><ellipse cx="81" cy="108" rx="17" ry="21" fill="#fff8ec"/><g class="k-pupil"><ellipse cx="83" cy="111" rx="8" ry="11" fill="#2e1d1e"/><circle cx="80" cy="106" r="3" fill="#fff"/></g></g>
+<g class="k-eye k-eye-r"><ellipse cx="139" cy="108" rx="17" ry="21" fill="#fff8ec"/><g class="k-pupil"><ellipse cx="137" cy="111" rx="8" ry="11" fill="#2e1d1e"/><circle cx="134" cy="106" r="3" fill="#fff"/></g></g>
+<g class="k-sleepeyes" fill="none" stroke="#653019" stroke-width="4" stroke-linecap="round"><path d="M70 109q11 10 22 0m36 0q11 10 22 0"/></g>
+<ellipse cx="62" cy="129" rx="9" ry="5" fill="#f38359"/><ellipse cx="158" cy="129" rx="9" ry="5" fill="#f38359"/>
+<path class="k-m k-m-idle" d="M92 135q18-19 36 0c-1 14-35 14-36 0Z" fill="#d85823"/>
+<path class="k-m k-m-happy" d="M90 135q20-20 40 0c-4 20-36 20-40 0Z" fill="#a5341c"/>
+<path class="k-m k-m-sad" d="M92 137q18-20 36 0-17-2-36 0Z" fill="#b84420"/>
+<ellipse class="k-m k-m-o" cx="110" cy="135" rx="11" ry="10" fill="#a5341c"/>
+<path class="k-m k-m-sleep" d="M94 135q16-15 32 0-16 9-32 0Z" fill="#d85823"/>
+<path d="M92 132c10-4 11-8 18-8s8 4 18 8c4 9-33 11-36 0Z" fill="#f98939"/>
+<path d="M103 131q7-3 14 0" fill="none" stroke="#ffb56a" stroke-width="2" stroke-linecap="round"/>
+<g class="k-zzz" fill="#9063ac"><text class="kz1" x="172" y="85" font-size="21" font-weight="800">z</text><text class="kz2" x="186" y="61" font-size="26" font-weight="800">Z</text></g>
 </g>
-<g class="k-sp"><path class="sp1" d="M28 76 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#ffd34d"/><path class="sp2" d="M198 62 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5z" fill="#c9f53a"/><circle class="sp3" cx="176" cy="24" r="4" fill="#bba5ff"/></g>
+<g class="k-sp"><path class="sp1" d="M30 70l3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#f3aa40"/><path class="sp2" d="M186 46l3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#a88af8"/><circle class="sp3" cx="172" cy="22" r="4" fill="#f9a86f"/></g>
 </svg>`;
 
 const instances = new Set();
@@ -78,7 +80,7 @@ export function createKri({ size = 120, pet = false } = {}) {
       const r = el.getBoundingClientRect(), t = target.getBoundingClientRect();
       const dx = t.left + t.width * (0.2 + 0.6 * ratio) - (r.left + r.width / 2), dy = t.top + t.height / 2 - (r.top + r.height * 0.55);
       const d = Math.hypot(dx, dy) || 1;
-      api.look(dx / d * 8, dy / d * 9);
+      api.look(dx / d * 4, dy / d * 5);
     },
     anim(cls, ms = 500) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), ms); },
     nudge() { api.anim('nudge', 200); },
@@ -108,7 +110,7 @@ function look() {
     const r = i.el.getBoundingClientRect();
     const dx = mx - (r.left + r.width / 2), dy = my - (r.top + r.height * 0.55);
     const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260);
-    i.look(dx / d * 8 * k, dy / d * 9 * k);
+    i.look(dx / d * 4 * k, dy / d * 5 * k);
   });
 }
 window.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; if (!raf) raf = requestAnimationFrame(look); }, { passive: true });
