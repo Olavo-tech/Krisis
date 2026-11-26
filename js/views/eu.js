@@ -41,6 +41,6 @@ export function renderEu(box) {
     else if (isMobile() && canFullscreen() && !inFullscreen()) box.append(h('button', { class: 'set', onclick: () => enterFullscreen() }, ic('expand', 20), h('div', { class: 'grow' }, 'Entrar em tela cheia', h('small', {}, 'Sem barras do navegador'))));
   }
   box.append(
-    h('a', { class: 'set', href: '#/plus' }, ic('sparkle', 20), h('div', { class: 'grow' }, isPlus() ? 'Plano Plus ativo' : 'Conhecer o Krisis Plus', h('small', {}, isPlus() ? 'Obrigado por apoiar!' : 'IA para estudar mais rápido')), ic('arrow', 16)),
+    h('a', { class: 'set', href: '#/plus' }, ic('sparkle', 20), h('div', { class: 'grow' }, isPlus() ? 'Plano Plus ativo' : 'Conhecer o Eduquack Plus', h('small', {}, isPlus() ? 'Obrigado por apoiar!' : 'IA para estudar mais rápido')), ic('arrow', 16)),
     h('button', { class: 'set', onclick: () => openAccount(() => location.reload()) }, ic('user', 20), h('div', { class: 'grow' }, 'Minha conta', h('small', {}, state.user ? state.user.email : '')), ic('arrow', 16)));
 }

@@ -53,7 +53,7 @@ export function whenLabel(n) {
 
 export async function renderPrazos(box) {
   const list = await loadDeadlines();
-  box.append(h('p', { class: 'lead', style: 'margin-bottom:14px' }, 'O Krisis lê as datas dos editais que você salvou e mostra o que vence primeiro.'));
+  box.append(h('p', { class: 'lead', style: 'margin-bottom:14px' }, 'O Eduquack lê as datas dos editais que você salvou e mostra o que vence primeiro.'));
   if (!list.length) {
     box.append(empty('Nenhum prazo ainda', 'Analise um edital e toque em Salvar edital. As datas aparecem aqui sozinhas.', h('a', { class: 'btn primary', href: '#/analisar' }, 'Analisar edital')));
     return;

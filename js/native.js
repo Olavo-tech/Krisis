@@ -44,7 +44,7 @@ function iosHint() {
   if (Date.now() - last < 3 * 864e5) return;
   store.set('krisis.iosHint', Date.now());
   const card = h('div', { class: 'ios-hint' },
-    h('b', {}, 'Quer o Krisis em tela cheia?'),
+    h('b', {}, 'Quer o Eduquack em tela cheia?'),
     h('p', {}, 'Toque em Compartilhar e depois em "Adicionar \u00e0 Tela de In\u00edcio". O app abre sem barras do navegador.'),
     h('button', { class: 'btn sm green', onclick: () => card.remove() }, 'Entendi'));
   document.body.append(card);
@@ -65,7 +65,7 @@ export function tapToStart() {
       h('div', { class: 'tts-blob b1' }), h('div', { class: 'tts-blob b2' }), h('div', { class: 'tts-blob b3' }),
       h('div', { class: 'tts-mid' }, kri.el,
         h('h1', {}, 'Toque para acordar o ' + MASCOT),
-        h('p', {}, 'O Krisis abre em tela cheia, como um app.')),
+        h('p', {}, 'O Eduquack abre em tela cheia, como um app.')),
       h('span', { class: 'tts-cta' }, ic('expand', 18), 'Toque em qualquer lugar'));
     let busy = false;
     async function go() {

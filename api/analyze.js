@@ -1,4 +1,4 @@
-// Krisis — /api/analyze
+// Eduquack — /api/analyze
 // Hardening: CORS restrito, cota atômica por plano (falha fechada), proteção SSRF e validação no servidor.
 
 import { consumeQuota, getUserId, groqJson, readEnv, refundQuota } from './_lib.js';
@@ -207,7 +207,7 @@ export default async function handler(req, res) {
         code: 'DAILY_QUOTA_EXCEEDED',
         message: plan === 'plus'
           ? `Você atingiu o limite de ${dailyLimit} análises hoje. Tente novamente amanhã.`
-          : `Você atingiu o limite de ${dailyLimit} análises hoje. Tente novamente amanhã ou conheça o Krisis Plus.`,
+          : `Você atingiu o limite de ${dailyLimit} análises hoje. Tente novamente amanhã ou conheça o Eduquack Plus.`,
         quota: quotaInfo
       });
     }
@@ -252,7 +252,7 @@ export default async function handler(req, res) {
     ? safeFocuses.join('; ')
     : 'datas de inscrição, isenção, provas e resultados; número de vagas, cotas, remuneração e taxa de inscrição; requisitos de escolaridade, idade, documentação e etapas; conteúdo programático, matérias cobradas, pesos e redação';
 
-  const systemPrompt = `Você é o analista documental do Krisis, especializado em extrair e estruturar informações factuais de editais de concursos públicos, vestibulares, processos seletivos e exames.
+  const systemPrompt = `Você é o analista documental do Eduquack, especializado em extrair e estruturar informações factuais de editais de concursos públicos, vestibulares, processos seletivos e exames.
 
 REGRAS DE VERACIDADE ESTRITA (ZERO ALUCINAÇÃO):
 1. Analise EXCLUSIVAMENTE o conteúdo fornecido na mensagem do usuário (${sourceMode}).

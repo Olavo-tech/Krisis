@@ -1,4 +1,4 @@
-// Krispim — o mascote do Krisis. Laranja e preto, olhos enormes, reage ao site, tem voz fofa e animações.
+// Krispim — o mascote do Eduquack. Laranja e preto, olhos enormes, reage ao site, tem voz fofa e animações.
 import { h, store, getStats, floatText } from './core.js';
 import { ic } from './icons.js';
 import { sfx } from './sfx.js';
@@ -56,7 +56,7 @@ export function burst(x, y, n = 32) {
 }
 
 export function createKri({ size = 120, pet = false } = {}) {
-  const el = h('div', { class: 'kri m-idle' + (pet ? ' kri-pet' : ''), style: 'width:' + size + 'px;height:' + Math.round(size * 1.05) + 'px', role: 'img', 'aria-label': MASCOT + ', o mascote do Krisis' });
+  const el = h('div', { class: 'kri m-idle' + (pet ? ' kri-pet' : ''), style: 'width:' + size + 'px;height:' + Math.round(size * 1.05) + 'px', role: 'img', 'aria-label': MASCOT + ', o mascote do Eduquack' });
   el.innerHTML = SVG;
   const bubble = h('div', { class: 'kri-bubble', role: 'status' });
   el.append(bubble);
@@ -129,7 +129,7 @@ setInterval(() => {
 }, 5000);
 
 setInterval(() => {
-  const f = /^\d\d:\d\d \u00b7 Krisis/.test(document.title);
+  const f = /^\d\d:\d\d \u00b7 Eduquack/.test(document.title);
   if (f === S.focusing) return;
   S.focusing = f;
   react(base(), 0);
@@ -159,7 +159,7 @@ document.addEventListener('krisis:levelup', (e) => {
 
 const TIPS = {
   hoje: ['Comece pela miss\u00e3o mais f\u00e1cil. O primeiro passo pesa mais.', 'Aperte Ctrl+K para anotar, buscar ou criar tarefas.'],
-  magico: ['Joga o material aqui e eu organizo: p\u00e1gina, cart\u00f5es e tarefas.', 'Voc\u00ea tamb\u00e9m pode compartilhar um texto de outro app direto para o Krisis.'],
+  magico: ['Joga o material aqui e eu organizo: p\u00e1gina, cart\u00f5es e tarefas.', 'Voc\u00ea tamb\u00e9m pode compartilhar um texto de outro app direto para o Eduquack.'],
   analisar: ['Cole o link oficial ou envie o PDF. Eu leio, voc\u00ea decide.'],
   editais: ['Seus editais salvos alimentam o Radar de prazos.'],
   prazos: ['Prazo anotado \u00e9 prazo cumprido. Crie as tarefas com um toque.'],

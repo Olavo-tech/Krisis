@@ -37,7 +37,7 @@ applyTheme();
 const ROUTES = {
   hoje: ['Hoje', renderHome], magico: ['Captura mágica', renderMagico], estudar: ['Estudar', renderEstudar], analisar: ['Analisar edital', renderAnalyzer],
   editais: ['Meus editais', renderSaved], prazos: ['Radar de prazos', renderPrazos], tarefas: ['Tarefas', renderTasks], cartoes: ['Cartões de revisão', renderCards],
-  foco: ['Foco', renderFocus], plus: ['Krisis Plus', renderPlus], eu: ['Eu', renderEu], pagina: ['Página', renderPage]
+  foco: ['Foco', renderFocus], plus: ['Eduquack Plus', renderPlus], eu: ['Eu', renderEu], pagina: ['Página', renderPage]
 };
 const NAV = [
   ['Visão geral', [['#/hoje', 'home', 'Hoje'], ['#/magico', 'wand', 'Captura mágica']]],
@@ -74,9 +74,9 @@ function buildShell() {
   const name = displayName();
   const plan = isPlus()
     ? h('div', { class: 'plus-card' }, h('span', {}, 'Plano Plus ativo'))
-    : h('div', { class: 'plus-card' }, h('span', {}, 'Krisis Plus: IA para estudar mais rápido.'), h('a', { class: 'btn sm primary', href: '#/plus' }, 'Conhecer'));
+    : h('div', { class: 'plus-card' }, h('span', {}, 'Eduquack Plus: IA para estudar mais rápido.'), h('a', { class: 'btn sm primary', href: '#/plus' }, 'Conhecer'));
   const side = h('aside', { class: 'side glass', id: 'side' },
-    h('a', { class: 'brand', href: '#/hoje' }, h('span', { class: 'brand-mark' }, 'K'), h('span', { class: 'brand-name' }, 'Krisis')),
+    h('a', { class: 'brand', href: '#/hoje' }, h('span', { class: 'brand-mark' }, 'E'), h('span', { class: 'brand-name' }, 'Eduquack')),
     h('div', { class: 'greet' }, h('span', { class: 'greet-s' }, 'Bem-vindo de volta,'), h('b', { class: 'greet-n' }, name), h('span', { class: 'greet-l' }, lastLabel()), h('div', { class: 'lvl', id: 'lvlBox' })),
     h('nav', { class: 'nav', id: 'nav', 'aria-label': 'Principal' }, h('i', { class: 'nav-ind', id: 'navInd' }),
       NAV.map(([label, items]) => [h('div', { class: 'side-label' }, label), items.map(([href, i, l]) => navLink(href, i, l))]),
@@ -89,7 +89,7 @@ function buildShell() {
         h('span', { class: 'avatar' }, (name[0] || 'K').toUpperCase()),
         h('span', {}, h('div', { class: 'acct-name' }, name), h('div', { class: 'acct-sub' }, isPlus() ? 'Plus' : 'Plano grátis')))));
   const top = h('header', { class: 'top' },
-    h('div', { class: 'crumb' }, icon('home', 18), h('span', { class: 'muted' }, 'Visão geral'), h('span', { class: 'muted' }, '/'), h('b', { id: 'topTitle' }), h('b', { class: 'mobile-brand' }, 'Krisis')),
+    h('div', { class: 'crumb' }, icon('home', 18), h('span', { class: 'muted' }, 'Visão geral'), h('span', { class: 'muted' }, '/'), h('b', { id: 'topTitle' }), h('b', { class: 'mobile-brand' }, 'Eduquack')),
     h('button', { class: 'search-pill', onclick: openPalette, 'aria-label': 'Buscar ou criar' }, icon('search', 16), h('span', { class: 't' }, 'Buscar ou criar…'), h('kbd', {}, 'Ctrl K')),
     h('div', { class: 'top-stats', id: 'topStats' }),
     h('button', { class: 'icon-btn', id: 'themeBtn', 'aria-label': 'Alternar tema', onclick: toggleTheme }, icon(theme === 'dark' ? 'sun' : 'moon')));
@@ -201,7 +201,7 @@ async function boot() {
   handleShare();
   if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
   if (!sb) {
-    root.replaceChildren(h('main', { class: 'boot' }, h('h1', {}, 'Krisis'), h('p', {}, 'Não foi possível carregar um recurso necessário. Verifique sua conexão e recarregue a página.')));
+    root.replaceChildren(h('main', { class: 'boot' }, h('h1', {}, 'Eduquack'), h('p', {}, 'Não foi possível carregar um recurso necessário. Verifique sua conexão e recarregue a página.')));
     return;
   }
   const [{ data }] = await Promise.all([sb.auth.getSession(), tapToStart()]);
