@@ -14,7 +14,7 @@ function gatherContext() {
   return parts.join('\n\n').slice(0, 6000);
 }
 
-// Chat com o Krispim: responde com base no que está aberto na tela.
+// Chat com o Tuck: responde com base no que está aberto na tela.
 export function openTutor(initial) {
   if (!isPlus()) { openPlus('O tutor ' + MASCOT + ' com IA'); return; }
   const context = gatherContext();

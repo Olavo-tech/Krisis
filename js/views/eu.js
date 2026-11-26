@@ -13,6 +13,15 @@ export function renderEu(box) {
     h('div', { class: 'grow' }, h('h2', {}, name), h('div', { class: 'row', style: 'margin-top:6px' }, h('span', { class: 'chip green' }, 'Nível ' + st.level), h('span', { class: 'chip' }, st.streak + (st.streak === 1 ? ' dia seguido' : ' dias seguidos')), h('span', { class: 'chip' }, st.xp + ' XP')),
       h('div', { class: 'bar', style: 'margin-top:10px' }, h('i', { style: 'width:' + st.levelXp + '%' })))));
 
+  box.append(h('a', { class: 'set', href: '#/hoje/configurar' }, ic('book', 20), 'Configurar minha trilha'));
+  const history = h('div');
+  const details = h('details', {}, h('summary', {}, 'Histórico e constância'), history);
+  details.addEventListener('toggle', () => {
+    if (!details.open || history.childNodes.length) return;
+    import('./activity.js').then(({ renderActivity }) => renderActivity(history));
+  });
+  box.append(details);
+
   const kri = createKri({ size: 130 });
   bindPoke(kri);
   const play = (label, fn) => h('button', { class: 'btn sm', onclick: fn }, label);
@@ -33,7 +42,7 @@ export function renderEu(box) {
     sw('Sons fofos', 'Efeitos e a voz do ' + MASCOT, soundOn, (v) => { setSound(v); if (v) sfx.chirp('happy'); }),
     sw('Vibração', 'Retorno tátil nos toques (celular)', () => store.get('krisis.haptic', true), (v) => { store.set('krisis.haptic', v); if (v) haptic(20); }),
     isMobile() ? sw('Tela cheia automática', 'Volta para tela cheia no próximo toque', () => store.get('krisis.fs', true), (v) => { store.set('krisis.fs', v); if (v) enterFullscreen(); }) : null,
-    sw('Tema escuro', 'Preto com laranja', () => document.documentElement.getAttribute('data-theme') === 'dark', () => document.dispatchEvent(new CustomEvent('krisis:theme-toggle'))));
+    sw('Tema escuro', 'Grafite com amarelo', () => document.documentElement.getAttribute('data-theme') === 'dark', () => document.dispatchEvent(new CustomEvent('krisis:theme-toggle'))));
 
   if (!isStandalone()) {
     if (canInstall()) box.append(h('button', { class: 'set', onclick: async () => { const ok = await installApp(); if (ok) speak('App instalado!', 2500); } }, ic('download', 20), h('div', { class: 'grow' }, 'Instalar o app', h('small', {}, 'Abre em tela cheia, direto da tela inicial'))));
@@ -41,6 +50,6 @@ export function renderEu(box) {
     else if (isMobile() && canFullscreen() && !inFullscreen()) box.append(h('button', { class: 'set', onclick: () => enterFullscreen() }, ic('expand', 20), h('div', { class: 'grow' }, 'Entrar em tela cheia', h('small', {}, 'Sem barras do navegador'))));
   }
   box.append(
-    h('a', { class: 'set', href: '#/plus' }, ic('sparkle', 20), h('div', { class: 'grow' }, isPlus() ? 'Plano Plus ativo' : 'Conhecer o Krisis Plus', h('small', {}, isPlus() ? 'Obrigado por apoiar!' : 'IA para estudar mais rápido')), ic('arrow', 16)),
+    h('a', { class: 'set', href: '#/plus' }, ic('sparkle', 20), h('div', { class: 'grow' }, isPlus() ? 'Plano Plus ativo' : 'Conhecer o Eduquack Plus', h('small', {}, isPlus() ? 'Obrigado por apoiar!' : 'IA para estudar mais rápido')), ic('arrow', 16)),
     h('button', { class: 'set', onclick: () => openAccount(() => location.reload()) }, ic('user', 20), h('div', { class: 'grow' }, 'Minha conta', h('small', {}, state.user ? state.user.email : '')), ic('arrow', 16)));
 }

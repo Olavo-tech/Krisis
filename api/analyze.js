@@ -1,14 +1,11 @@
-// Krisis — /api/analyze
+// Eduquack — /api/analyze
 // Hardening: CORS restrito, cota atômica por plano (falha fechada), proteção SSRF e validação no servidor.
+
+import { consumeQuota, getUserId, groqJson, readEnv, refundQuota } from './_lib.js';
 
 const FREE_LIMIT = Number(process.env.FREE_ANALYZE_LIMIT || 25);
 const PLUS_LIMIT = Number(process.env.PLUS_ANALYZE_LIMIT || 200);
 const MAX_INPUT_CHARS = 60000;
-
-// Modelos de texto da Groq em ordem de preferência. Pode ser sobrescrito na Vercel com GROQ_MODELS="modelo1,modelo2".
-// (Os llama-3.x, llama-4-scout, qwen3-32b e gemma2 foram descontinuados pela Groq.)
-const DEFAULT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-const NON_CHAT_MODEL = /whisper|guard|safeguard|tts|orpheus|embed|compound|transcri|speech/i;
 
 const STATIC_ORIGINS = new Set([
   'https://krisis-seven.vercel.app',
@@ -121,50 +118,6 @@ async function fetchUrlContent(startUrl) {
   }
 }
 
-// Lista de modelos: env > padrão atual > descoberta dinâmica em /models (último recurso)
-async function resolveCandidateModels(apiKey) {
-  const fromEnv = String(process.env.GROQ_MODELS || '').split(',').map(s => s.trim()).filter(Boolean);
-  const base = fromEnv.length ? fromEnv : DEFAULT_MODELS;
-  return base;
-}
-
-async function discoverExtraModels(apiKey, exclude) {
-  try {
-    const r = await fetch('https://api.groq.com/openai/v1/models', {
-      headers: { Authorization: `Bearer ${apiKey}` }
-    });
-    if (!r.ok) return [];
-    const j = await r.json();
-    return (j?.data || [])
-      .filter(m => m && m.active !== false && typeof m.id === 'string')
-      .map(m => m.id)
-      .filter(id => !NON_CHAT_MODEL.test(id) && !exclude.includes(id))
-      .slice(0, 4);
-  } catch (_) {
-    return [];
-  }
-}
-
-function buildGroqBody(model, systemPrompt, userContent) {
-  const body = {
-    model,
-    temperature: 0.1,
-    response_format: { type: 'json_object' },
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userContent }
-    ]
-  };
-  if (/^openai\/gpt-oss/i.test(model)) {
-    // modelos de raciocínio: limita o raciocínio e reserva espaço para o JSON final
-    body.reasoning_effort = 'low';
-    body.max_completion_tokens = 5000;
-  } else {
-    body.max_tokens = 3000;
-  }
-  return body;
-}
-
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   const originOk = isAllowedOrigin(origin);
@@ -187,49 +140,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, code: 'METHOD_NOT_ALLOWED', message: 'Método não permitido.' });
   }
 
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  // Falha fechada: sem banco/IA configurados, nada roda.
-  if (!GROQ_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(500).json({
-      ok: false,
-      code: 'SERVER_CONFIG_ERROR',
-      message: 'Servidor não configurado. Defina GROQ_API_KEY, SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY na Vercel.'
-    });
+  const cfg = readEnv();
+  if (!cfg) {
+    return res.status(500).json({ ok: false, code: 'SERVER_CONFIG_ERROR', message: 'O serviço de análise está indisponível.' });
   }
 
-  // 1. Sessão
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  if (!token) {
-    return res.status(401).json({
-      ok: false,
-      code: 'UNAUTHORIZED',
-      message: 'Faça login ou crie sua conta gratuita para analisar editais.'
-    });
-  }
-
-  let userId = null;
+  let userId;
   try {
-    const userResp = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${token}` }
-    });
-    if (!userResp.ok) {
-      return res.status(401).json({
-        ok: false,
-        code: 'INVALID_SESSION',
-        message: 'Sessão expirada ou inválida. Entre novamente na sua conta.'
-      });
-    }
-    const userData = await userResp.json();
-    userId = userData?.id;
-    if (!userId) {
-      return res.status(401).json({ ok: false, code: 'INVALID_USER', message: 'Usuário não identificado.' });
-    }
-  } catch (_) {
-    return res.status(500).json({ ok: false, code: 'AUTH_CHECK_FAILED', message: 'Falha ao validar sua conta no servidor.' });
+    userId = await getUserId(cfg, req);
+  } catch (error) {
+    console.error('[analyze] sessão:', error.message);
+    return res.status(503).json({ ok: false, code: 'AUTH_CHECK_FAILED', message: 'Não foi possível validar sua conta agora. Tente novamente.' });
+  }
+  if (!userId) {
+    return res.status(401).json({ ok: false, code: 'UNAUTHORIZED', message: 'Entre na sua conta para analisar editais.' });
   }
 
   // 2. Validação de entrada ANTES de gastar cota
@@ -267,32 +191,13 @@ export default async function handler(req, res) {
   // 3. Cota atômica por plano — FALHA FECHADA
   let quotaInfo;
   try {
-    const rpcResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/consume_ai_quota`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-      },
-      body: JSON.stringify({
-        p_user_id: userId,
-        p_feature: 'analyze',
-        p_free_limit: FREE_LIMIT,
-        p_plus_limit: PLUS_LIMIT
-      })
-    });
-
-    if (!rpcResp.ok) throw new Error(`quota rpc ${rpcResp.status}`);
-    const rpcData = await rpcResp.json();
-    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-    if (!row || typeof row.allowed !== 'boolean') throw new Error('quota rpc bad shape');
-
-    const plan = row.plan === 'plus' ? 'plus' : 'free';
+    const row = await consumeQuota(cfg, userId, 'analyze', FREE_LIMIT, PLUS_LIMIT);
+    const { plan } = row;
     const dailyLimit = plan === 'plus' ? PLUS_LIMIT : FREE_LIMIT;
     quotaInfo = {
       plan,
       dailyLimit,
-      dailyRemaining: Number(row.remaining ?? 0),
+      dailyRemaining: row.remaining,
       resetInSec: row.allowed ? 0 : 3600
     };
 
@@ -302,7 +207,7 @@ export default async function handler(req, res) {
         code: 'DAILY_QUOTA_EXCEEDED',
         message: plan === 'plus'
           ? `Você atingiu o limite de ${dailyLimit} análises hoje. Tente novamente amanhã.`
-          : `Você atingiu o limite de ${dailyLimit} análises hoje. Tente novamente amanhã ou conheça o Krisis Plus.`,
+          : `Você atingiu o limite de ${dailyLimit} análises hoje. Tente novamente amanhã ou conheça o Eduquack Plus.`,
         quota: quotaInfo
       });
     }
@@ -315,20 +220,10 @@ export default async function handler(req, res) {
     });
   }
 
-  // Devolve 1 uso se a análise não puder ser concluída por falha nossa (IA/link), para não punir o usuário.
-  async function refundQuota() {
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/rpc/refund_ai_quota`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-        },
-        body: JSON.stringify({ p_user_id: userId, p_feature: 'analyze' })
-      });
-      if (quotaInfo) quotaInfo.dailyRemaining = Math.min(quotaInfo.dailyLimit, quotaInfo.dailyRemaining + 1);
-    } catch (_) { /* melhor esforço */ }
+  async function refundAnalysis() {
+    const refunded = await refundQuota(cfg, userId, 'analyze');
+    if (refunded) quotaInfo.dailyRemaining = Math.min(quotaInfo.dailyLimit, quotaInfo.dailyRemaining + 1);
+    return refunded;
   }
 
   // 4. Contexto
@@ -339,7 +234,7 @@ export default async function handler(req, res) {
     const targetUrl = urlMatch[0];
     const fetched = await fetchUrlContent(targetUrl);
     if (!fetched.ok) {
-      await refundQuota();
+      await refundAnalysis();
       return res.status(422).json({ ok: false, code: 'URL_UNREADABLE', message: fetched.reason, quota: quotaInfo });
     }
     groundedContext = `URL oficial consultada: ${targetUrl}\n\nTexto extraído da página:\n${fetched.text}`;
@@ -357,7 +252,7 @@ export default async function handler(req, res) {
     ? safeFocuses.join('; ')
     : 'datas de inscrição, isenção, provas e resultados; número de vagas, cotas, remuneração e taxa de inscrição; requisitos de escolaridade, idade, documentação e etapas; conteúdo programático, matérias cobradas, pesos e redação';
 
-  const systemPrompt = `Você é o analista documental do Krisis, especializado em extrair e estruturar informações factuais de editais de concursos públicos, vestibulares, processos seletivos e exames.
+  const systemPrompt = `Você é o analista documental do Eduquack, especializado em extrair e estruturar informações factuais de editais de concursos públicos, vestibulares, processos seletivos e exames.
 
 REGRAS DE VERACIDADE ESTRITA (ZERO ALUCINAÇÃO):
 1. Analise EXCLUSIVAMENTE o conteúdo fornecido na mensagem do usuário (${sourceMode}).
@@ -386,94 +281,40 @@ Retorne EXATAMENTE estas chaves JSON:
 
 Priorize os focos selecionados pelo usuário: ${focusList}.`;
 
-  // 5. IA: modelos atuais primeiro; se todos falharem, tenta descobrir outros modelos de chat ativos em /models
-  const candidateModels = await resolveCandidateModels(GROQ_API_KEY);
-  const tried = [];
-  const errors = [];
-  let queue = [...candidateModels];
-  let discovered = false;
-
-  while (queue.length > 0) {
-    const model = queue.shift();
-    tried.push(model);
-    try {
-      const groqResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
-        body: JSON.stringify(buildGroqBody(model, systemPrompt, groundedContext))
+  try {
+    const { data, model } = await groqJson(cfg.GROQ_API_KEY, systemPrompt, groundedContext, (result) => {
+      if (result.outOfContext === true) return result;
+      return typeof result.titulo === 'string' && result.titulo.trim()
+        && typeof result.resumo === 'string' && result.resumo.trim() ? result : null;
+    });
+    if (data.outOfContext === true) {
+      return res.status(400).json({
+        ok: false, code: 'OUT_OF_CONTEXT',
+        message: data.motivo || 'O conteúdo enviado não parece ser de um edital ou processo seletivo.',
+        quota: quotaInfo
       });
-
-      if (!groqResp.ok) {
-        const errBody = await groqResp.text();
-        const msg = `HTTP ${groqResp.status} (${model}): ${errBody.slice(0, 160)}`;
-        errors.push(msg);
-        console.error('[analyze] groq error:', msg);
-        if (groqResp.status === 401 || groqResp.status === 403) break; // chave inválida: não adianta tentar outros
-      } else {
-        const completion = await groqResp.json();
-        const rawContent = completion?.choices?.[0]?.message?.content || '';
-
-        let parsed = null;
-        try {
-          parsed = JSON.parse(rawContent);
-        } catch (_) {
-          const match = rawContent.match(/\{[\s\S]*\}/);
-          if (match) {
-            try { parsed = JSON.parse(match[0]); } catch (_) { parsed = null; }
-          }
-        }
-
-        if (!parsed) {
-          const msg = `resposta fora do formato JSON (${model})`;
-          errors.push(msg);
-          console.error('[analyze]', msg);
-        } else if (parsed.outOfContext) {
-          return res.status(400).json({
-            ok: false,
-            code: 'OUT_OF_CONTEXT',
-            message: parsed.motivo || 'O conteúdo enviado não parece ser de um edital ou processo seletivo.',
-            quota: quotaInfo
-          });
-        } else {
-          return res.status(200).json({
-            ok: true,
-            modelUsed: model,
-            sourceMode,
-            quota: quotaInfo,
-            analysis: {
-              titulo: String(parsed.titulo || 'Resumo Executivo do Edital'),
-              bancaOrgao: String(parsed.bancaOrgao || 'Documento Analisado'),
-              status: String(parsed.status || 'Edital / Documento Analisado'),
-              escolaridade: String(parsed.escolaridade || ''),
-              resumo: String(parsed.resumo || ''),
-              datas: String(parsed.datas || ''),
-              vagas: String(parsed.vagas || ''),
-              requisitos: String(parsed.requisitos || ''),
-              provas: String(parsed.provas || ''),
-              armadilhas: String(parsed.armadilhas || ''),
-              checklist: String(parsed.checklist || '')
-            }
-          });
-        }
+    }
+    return res.status(200).json({
+      ok: true, modelUsed: model, sourceMode, quota: quotaInfo,
+      analysis: {
+        titulo: data.titulo,
+        bancaOrgao: String(data.bancaOrgao || 'Documento Analisado'),
+        status: String(data.status || 'Edital / Documento Analisado'),
+        escolaridade: String(data.escolaridade || ''),
+        resumo: data.resumo,
+        datas: String(data.datas || ''),
+        vagas: String(data.vagas || ''),
+        requisitos: String(data.requisitos || ''),
+        provas: String(data.provas || ''),
+        armadilhas: String(data.armadilhas || ''),
+        checklist: String(data.checklist || '')
       }
-    } catch (err) {
-      const msg = `${model}: ${err?.message || 'erro de rede'}`;
-      errors.push(msg);
-      console.error('[analyze] groq exception:', msg);
-    }
-
-    if (queue.length === 0 && !discovered) {
-      discovered = true;
-      queue = await discoverExtraModels(GROQ_API_KEY, tried);
-    }
+    });
+  } catch (_) {
+    const refunded = await refundAnalysis();
+    const message = refunded
+      ? 'A IA não respondeu. Seu uso foi devolvido. Tente novamente.'
+      : 'A IA não respondeu agora. Tente novamente em instantes.';
+    return res.status(502).json({ ok: false, code: 'AI_UPSTREAM_ERROR', message, quota: quotaInfo });
   }
-
-  await refundQuota();
-  return res.status(502).json({
-    ok: false,
-    code: 'AI_UPSTREAM_ERROR',
-    message: 'O serviço de IA está indisponível no momento. Seu uso de hoje não foi descontado. Tente novamente em instantes.',
-    detail: errors.slice(0, 3),
-    quota: quotaInfo
-  });
 }

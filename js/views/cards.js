@@ -18,7 +18,7 @@ function schedule(card, grade) {
   return { ease, interval_days: interval, due_at: due.toISOString() };
 }
 
-export async function renderCards(box) {
+export async function renderCards(box, mode) {
   async function decks() {
     box.replaceChildren();
     const [d, c] = await Promise.all([
@@ -82,7 +82,13 @@ export async function renderCards(box) {
   async function review(deckId) {
     let q = sb.from('flashcards').select('*').lte('due_at', new Date().toISOString()).order('due_at').limit(60);
     if (deckId) q = q.eq('deck_id', deckId);
-    const { data } = await q;
+    const { data, error } = await q;
+    if (!box.isConnected) return;
+    if (error) {
+      box.replaceChildren(empty('Não foi possível carregar os cartões', 'Tente novamente em instantes.',
+        h('button', { class: 'btn', onclick: decks }, 'Ver baralhos')));
+      return;
+    }
     const queue = data || [];
     box.replaceChildren();
     if (!queue.length) { box.append(empty('Tudo revisado!', 'Volte mais tarde para novos cartões.', h('button', { class: 'btn primary', onclick: decks }, 'Voltar'))); return; }
@@ -94,7 +100,7 @@ export async function renderCards(box) {
     const draw = () => {
       bar.style.width = Math.round((i / queue.length) * 100) + '%';
       if (i >= queue.length) {
-        addXp(5 + right * 2);
+        addXp(5 + right * 2, 'revisao');
         body.replaceChildren(empty('Sessão concluída!', 'Você acertou ' + right + ' de ' + queue.length + '. +' + (5 + right * 2) + ' XP', h('button', { class: 'btn primary', onclick: decks }, 'Concluir')));
         return;
       }
@@ -114,9 +120,10 @@ export async function renderCards(box) {
         h('button', { class: 'btn danger', onclick: () => grade(0) }, 'Errei'), h('button', { class: 'btn', onclick: () => grade(1) }, 'Difícil'),
         h('button', { class: 'btn primary', onclick: () => grade(2) }, 'Bom'), h('button', { class: 'btn green', onclick: () => grade(3) }, 'Fácil')) : null);
     };
-    box.append(h('div', { class: 'row', style: 'margin-bottom:12px' }, h('button', { class: 'btn sm', onclick: decks }, 'Sair'), h('div', { class: 'grow bar' }, bar)), body);
+    box.append(h('div', { class: 'row', style: 'margin-bottom:12px' }, mode === 'revisar' ? h('a', { class: 'btn sm', href: '#/hoje' }, 'Voltar à trilha') : h('button', { class: 'btn sm', onclick: decks }, 'Sair'), h('div', { class: 'grow bar' }, bar)), body);
     draw();
   }
 
-  await decks();
+  if (mode === 'revisar') await review(null);
+  else await decks();
 }

@@ -1,4 +1,8 @@
-import { sb, state, h, icon, chip, toast, addXp } from '../core.js';
+import { sb, state, store, h, icon, chip, toast, addXp } from '../core.js';
+import { callAI } from '../api.js';
+import { matchingTopics } from './exercises.js';
+import { subjects } from './curriculum.js';
+import { guide } from './guide.js';
 import { openPlus } from './plus.js';
 import { createPage } from './pages.js';
 import { uid } from '../core.js';
@@ -61,7 +65,44 @@ export async function analysisToPage(a) {
 }
 
 export function analysisActions(a, { saved = false } = {}) {
-  return h('div', { class: 'actions' },
+  const status = h('p', { role: 'status' });
+  function addLesson(result) {
+    const id = uid();
+    const key = 'eduquack.editalUnits.' + state.user.id;
+    localStorage.setItem(key, JSON.stringify([...store.get(key, []), {
+      key: id, baseKey: id, name: result.topic, title: result.title, text: result.intro,
+      questions: result.questions, source: a.titulo
+    }]));
+    status.replaceChildren(h('a', { class: 'btn', href: '#/hoje/' + id }, 'Abrir aula do edital'));
+  }
+  function offerCollection() {
+    for (const match of matchingTopics(String(a.provas || ''))) {
+      const [id, index] = match.key.split('-');
+      const unit = subjects[id].lessons[Number(index)];
+      status.append(h('button', { type: 'button', class: 'btn', onclick: () => {
+        try { addLesson({ topic: match.citation, title: unit.title, intro: unit.text, questions: match.questions }); }
+        catch { status.textContent = 'Sem espaço para salvar esta aula no navegador.'; }
+      } }, 'Usar questões do acervo · ' + unit.title));
+    }
+  }
+  const generate = h('button', { class: 'btn primary', onclick: () => {
+    guide('edital', 'Estude o conteúdo do edital', 'O Tuck usa as matérias indicadas no edital para criar uma aula com exercícios sobre um dos temas.', async () => {
+      const user = state.user.id;
+      generate.disabled = true;
+      status.textContent = 'Preparando questões sobre a matéria…';
+      try {
+        const result = await callAI({ action: 'lesson', syllabus: a.provas });
+        if (state.user?.id !== user) return;
+        if (result.missing) { status.textContent = 'Este trecho não especifica uma matéria. Analise o conteúdo programático do edital.'; return; }
+        addLesson(result);
+      } catch (error) {
+        status.textContent = error.message || 'Não foi possível preparar a aula.';
+        if (state.user?.id === user) offerCollection();
+      }
+      finally { generate.disabled = false; }
+    });
+  } }, 'Gerar aula deste edital');
+  return h('div', { class: 'actions' }, generate, status,
     saved ? null : h('button', { class: 'btn green', onclick: (e) => { e.currentTarget.disabled = true; saveEdital(a); } }, 'Salvar edital'),
     h('button', { class: 'btn primary', onclick: () => analysisToPage(a) }, 'Transformar em página'),
     h('button', { class: 'btn', onclick: () => { navigator.clipboard.writeText(analysisToText(a)).then(() => toast('Resumo copiado.', 'ok'), () => toast('Não foi possível copiar.', 'err')); } }, 'Copiar resumo'),

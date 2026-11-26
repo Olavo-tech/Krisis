@@ -6,7 +6,7 @@ import { openTutor } from './tutor.js';
 import { MASCOT } from '../mascot.js';
 
 const T = [
-  ['orange', 'stripes', 'scan', 'Analisar edital', 'Datas, vagas e requisitos', '#/analisar'],
+  ['yellow', 'stripes', 'scan', 'Analisar edital', 'Datas, vagas e requisitos', '#/analisar'],
   ['sky', 'dots', 'folder', 'Meus editais', 'Sua biblioteca', '#/editais'],
   ['butter', 'checks', 'calendar', 'Radar de prazos', 'O que vence primeiro', '#/prazos'],
   ['blush', 'waves', 'check', 'Tarefas', 'Pequenos passos', '#/tarefas'],

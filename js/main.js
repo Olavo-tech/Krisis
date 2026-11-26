@@ -18,8 +18,8 @@ import { renderEu } from './views/eu.js';
 import { openPalette } from './views/command.js';
 import { openTutor } from './views/tutor.js';
 import { initSfx } from './sfx.js';
-import { tapToStart } from './native.js';
-import { startMascot, unmountPet, MASCOT } from './mascot.js';
+import { enableFullscreenPreference } from './native.js';
+import { MASCOT } from './mascot.js';
 
 const root = document.getElementById('app');
 let theme = store.get('krisis.theme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -30,27 +30,27 @@ store.set('krisis.lastVisit', new Date().toISOString());
 function applyTheme() {
   document.documentElement.setAttribute('data-theme', theme);
   const m = document.querySelector('meta[name=theme-color]');
-  if (m) m.setAttribute('content', theme === 'dark' ? '#0b0b0f' : '#fff6e8');
+  if (m) m.setAttribute('content', theme === 'dark' ? '#0b0b0f' : '#fafaf5');
 }
 applyTheme();
 
 const ROUTES = {
   hoje: ['Hoje', renderHome], magico: ['Captura mágica', renderMagico], estudar: ['Estudar', renderEstudar], analisar: ['Analisar edital', renderAnalyzer],
   editais: ['Meus editais', renderSaved], prazos: ['Radar de prazos', renderPrazos], tarefas: ['Tarefas', renderTasks], cartoes: ['Cartões de revisão', renderCards],
-  foco: ['Foco', renderFocus], plus: ['Krisis Plus', renderPlus], eu: ['Eu', renderEu], pagina: ['Página', renderPage]
+  foco: ['Foco', renderFocus], plus: ['Eduquack Plus', renderPlus], eu: ['Eu', renderEu], pagina: ['Página', renderPage]
 };
 const NAV = [
   ['Visão geral', [['#/hoje', 'home', 'Hoje'], ['#/magico', 'wand', 'Captura mágica']]],
   ['Estudo', [['#/analisar', 'scan', 'Analisar edital'], ['#/editais', 'folder', 'Meus editais'], ['#/prazos', 'calendar', 'Prazos'], ['#/tarefas', 'check', 'Tarefas'], ['#/cartoes', 'cards', 'Cartões'], ['#/foco', 'timer', 'Foco']]]
 ];
 const TABS = [
-  ['#/hoje', 'home', 'Hoje', ['hoje']],
+  ['#/hoje', 'home', 'Trilha', ['hoje']],
   ['#/estudar', 'grid', 'Estudar', ['estudar', 'analisar', 'editais', 'prazos', 'tarefas', 'foco', 'pagina', 'plus']],
   ['#/magico', 'wand', 'Mágico', ['magico']],
   ['#/cartoes', 'cards', 'Revisar', ['cartoes']],
   ['#/eu', 'user', 'Eu', ['eu']]
 ];
-const TICKER_TIPS = ['Jogue um material na Captura mágica e eu organizo tudo', 'Missões do dia renovam à meia-noite', 'Ctrl+K abre a barra de comando em qualquer tela', 'Arraste o ' + MASCOT + ' para onde preferir'];
+const TICKER_TIPS = ['Jogue um material na Captura mágica e eu organizo tudo', 'Missões do dia renovam à meia-noite', 'Ctrl+K abre a barra de comando em qualquer tela'];
 
 function lastLabel() {
   if (!prevVisit) return 'Primeira vez por aqui';
@@ -74,9 +74,9 @@ function buildShell() {
   const name = displayName();
   const plan = isPlus()
     ? h('div', { class: 'plus-card' }, h('span', {}, 'Plano Plus ativo'))
-    : h('div', { class: 'plus-card' }, h('span', {}, 'Krisis Plus: IA para estudar mais rápido.'), h('a', { class: 'btn sm primary', href: '#/plus' }, 'Conhecer'));
+    : h('div', { class: 'plus-card' }, h('span', {}, 'Eduquack Plus: IA para estudar mais rápido.'), h('a', { class: 'btn sm primary', href: '#/plus' }, 'Conhecer'));
   const side = h('aside', { class: 'side glass', id: 'side' },
-    h('a', { class: 'brand', href: '#/hoje' }, h('span', { class: 'brand-mark' }, 'K'), h('span', { class: 'brand-name' }, 'Krisis')),
+    h('a', { class: 'brand', href: '#/hoje' }, h('span', { class: 'brand-mark' }, 'E'), h('span', { class: 'brand-name' }, 'Eduquack')),
     h('div', { class: 'greet' }, h('span', { class: 'greet-s' }, 'Bem-vindo de volta,'), h('b', { class: 'greet-n' }, name), h('span', { class: 'greet-l' }, lastLabel()), h('div', { class: 'lvl', id: 'lvlBox' })),
     h('nav', { class: 'nav', id: 'nav', 'aria-label': 'Principal' }, h('i', { class: 'nav-ind', id: 'navInd' }),
       NAV.map(([label, items]) => [h('div', { class: 'side-label' }, label), items.map(([href, i, l]) => navLink(href, i, l))]),
@@ -89,12 +89,12 @@ function buildShell() {
         h('span', { class: 'avatar' }, (name[0] || 'K').toUpperCase()),
         h('span', {}, h('div', { class: 'acct-name' }, name), h('div', { class: 'acct-sub' }, isPlus() ? 'Plus' : 'Plano grátis')))));
   const top = h('header', { class: 'top' },
-    h('button', { class: 'm-avatar', 'aria-label': 'Meu perfil', onclick: () => { location.hash = '#/eu'; } }, (name[0] || 'K').toUpperCase()),
-    h('div', { class: 'crumb' }, icon('home', 18), h('span', { class: 'muted' }, 'Visão geral'), h('span', { class: 'muted' }, '/'), h('b', { id: 'topTitle' })),
+    h('div', { class: 'crumb' }, icon('home', 18), h('span', { class: 'muted' }, 'Visão geral'), h('span', { class: 'muted' }, '/'), h('b', { id: 'topTitle' }), h('b', { class: 'mobile-brand' }, 'Eduquack')),
     h('button', { class: 'search-pill', onclick: openPalette, 'aria-label': 'Buscar ou criar' }, icon('search', 16), h('span', { class: 't' }, 'Buscar ou criar…'), h('kbd', {}, 'Ctrl K')),
     h('div', { class: 'top-stats', id: 'topStats' }),
     h('button', { class: 'icon-btn', id: 'themeBtn', 'aria-label': 'Alternar tema', onclick: toggleTheme }, icon(theme === 'dark' ? 'sun' : 'moon')));
-  const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Navegação' }, TABS.map(([href, i, label, grp]) => h('a', { class: 'tab' + (i === 'wand' ? ' magic' : ''), href, 'data-g': grp.join(','), 'aria-label': label }, ic(i, i === 'wand' ? 28 : 24))));
+  const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Navegação' }, TABS.map(([href, i, label, grp]) => h('a', { class: 'tab', href, 'data-g': grp.join(',') },
+    h('span', { class: 'tab-icon' }, ic(i, 23)), h('span', {}, label))));
   return h('div', { class: 'shell' }, side,
     h('main', { class: 'main' }, top, h('div', { class: 'ticker', id: 'ticker', 'aria-label': 'Prazos próximos' }), h('div', { id: 'view', class: 'view' })), tabbar);
 }
@@ -151,7 +151,12 @@ async function route() {
   document.body.dataset.route = seg;
   document.getElementById('topTitle').textContent = seg === 'hoje' ? 'Oi, ' + displayName().split(' ')[0] + '!' : title;
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.r === seg));
-  document.querySelectorAll('.tab').forEach((a) => a.classList.toggle('active', a.dataset.g.split(',').includes(seg)));
+  document.querySelectorAll('.tab').forEach((a) => {
+    const active = a.dataset.g.split(',').includes(seg);
+    a.classList.toggle('active', active);
+    if (active) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
   moveIndicator();
   const box = h('div', { class: 'view-inner' });
   document.getElementById('view').replaceChildren(box);
@@ -170,14 +175,12 @@ async function route() {
 function render() {
   root.replaceChildren();
   if (!state.user) {
-    unmountPet();
     delete document.body.dataset.route;
     root.append(renderLanding({ onLogin: () => openAuthScreen('login'), onSignup: () => openAuthScreen('signup') }));
     return;
   }
   root.append(buildShell());
   route();
-  startMascot(displayName().split(' ')[0]);
 }
 
 function handleShare() {
@@ -196,10 +199,11 @@ async function boot() {
   handleShare();
   if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
   if (!sb) {
-    root.replaceChildren(h('main', { class: 'boot' }, h('h1', {}, 'Krisis'), h('p', {}, 'Não foi possível carregar um recurso necessário. Verifique sua conexão e recarregue a página.')));
+    root.replaceChildren(h('main', { class: 'boot' }, h('h1', {}, 'Eduquack'), h('p', {}, 'Não foi possível carregar um recurso necessário. Verifique sua conexão e recarregue a página.')));
     return;
   }
-  const [{ data }] = await Promise.all([sb.auth.getSession(), tapToStart()]);
+  enableFullscreenPreference();
+  const { data } = await sb.auth.getSession();
   state.session = data.session;
   state.user = data.session ? data.session.user : null;
   lastUserId = state.user ? state.user.id : null;

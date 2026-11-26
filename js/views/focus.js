@@ -32,12 +32,12 @@ function beep() {
   } catch (_) { /* sem áudio */ }
 }
 
-function stop() { clearInterval(T.iv); T.iv = null; T.running = false; document.title = 'Krisis — Seu espaço de estudo para vestibulares e editais'; }
+function stop() { clearInterval(T.iv); T.iv = null; T.running = false; document.title = 'Eduquack — Seu espaço de estudo para vestibulares e editais'; }
 function setMode(m) { stop(); T.mode = m; T.left = MODES[m][1] * 60; paint(); }
 
 function tick() {
   T.left = Math.max(0, Math.round((T.endAt - Date.now()) / 1000));
-  document.title = fmt(T.left) + ' · Krisis';
+  document.title = fmt(T.left) + ' · Eduquack';
   paint();
   if (T.left > 0) return;
   const wasFocus = T.mode === 'foco';
@@ -45,7 +45,7 @@ function tick() {
   beep();
   if (wasFocus) {
     store.set(todayKey(), store.get(todayKey(), 0) + 1);
-    addXp(20);
+    addXp(20, 'foco');
     toast('Ciclo de foco concluído! +20 XP', 'ok');
     setMode('pausa');
   } else {

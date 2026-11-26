@@ -5,7 +5,7 @@ import { sfx, haptic } from '../sfx.js';
 
 const TR = { 'Invalid login credentials': 'E-mail ou senha incorretos.', 'User already registered': 'Este e-mail já tem conta. Que tal entrar?', 'Email not confirmed': 'Confirme seu e-mail para entrar.' };
 
-// Tela de entrar/criar conta com o Krispim reagindo a cada campo.
+// Tela de entrar/criar conta com o Tuck reagindo a cada campo.
 export function openAuthScreen(mode = 'signup') {
   let m = mode;
   const kri = createKri({ size: 150 });

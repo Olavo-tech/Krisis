@@ -166,7 +166,7 @@ export function markStudyDay() {
   const t = isoDay();
   if (!days.includes(t)) { days.push(t); store.set('krisis.days', days.slice(-400)); }
 }
-export function addXp(n) {
+export function addXp(n, kind = routeKind()) {
   const before = store.get('krisis.xp', 0);
   const xp = before + n;
   store.set('krisis.xp', xp);
@@ -177,7 +177,6 @@ export function addXp(n) {
   const keys = Object.keys(m).sort();
   if (keys.length > 140) keys.slice(0, keys.length - 140).forEach((x) => delete m[x]);
   store.set('krisis.dxp', m);
-  const kind = routeKind();
   if (kind) bumpQuest(kind);
   document.dispatchEvent(new CustomEvent('krisis:stats', { detail: { n, kind } }));
   if (Math.floor(xp / 100) > Math.floor(before / 100)) document.dispatchEvent(new CustomEvent('krisis:levelup', { detail: { level: Math.floor(xp / 100) + 1 } }));
