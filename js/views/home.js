@@ -1,5 +1,6 @@
 import { h, icon, state, store, isoDay } from '../core.js';
-import { openPlus } from './plus.js';
+import { guide } from './guide.js';
+import { newRound, practicePool } from './exercises.js';
 import { createKri } from '../mascot.js';
 import { subjects, tracks } from './curriculum.js';
 
@@ -11,6 +12,7 @@ export function renderHome(box, page) {
   const key = 'eduquack.learning.v1.' + state.user.id;
   const data = store.get(key, { exam: '', track: 'geral', minutes: 20, weak: [], answers: [], completed: {}, stage: 'goal' });
   const save = () => store.set(key, data);
+  const editalUnits = store.get('eduquack.editalUnits.' + state.user.id, []);
   const topics = () => tracks[data.track].subjects;
   const ranked = () => [...topics()].sort((a, b) => Number(data.weak.includes(b)) - Number(data.weak.includes(a)));
   const questions = () => ranked().flatMap(id => subjects[id].test.slice(0, data.weak.includes(id) ? 3 : 2).map((q, index) => ({ ...q, id, index })));
@@ -52,12 +54,15 @@ export function renderHome(box, page) {
   }
 
   function weakness() {
+    const begin = button('Ver teste de nível', () => guide('nivel', 'Descubra seu nível de conhecimento',
+      'Vou usar suas respostas para escolher a matéria e a dificuldade da primeira aula. Se ainda não souber uma resposta, marque “Ainda não sei”. Aqui você não perde corações.',
+      () => { data.answers = []; move('quiz'); }));
     paint(step(3, 3), title('Onde você precisa de mais prática?'),
       h('p', {}, 'Marque as matérias que quiser priorizar na prova inicial.'),
       h('div', { class: 'learn-options' }, topics().map(id =>
         h('label', { class: 'learn-option' }, h('input', { type: 'checkbox', checked: data.weak.includes(id),
           onchange: e => { data.weak = data.weak.filter(x => x !== id); if (e.target.checked) data.weak.push(id); save(); } }), subjects[id].name))),
-      button('Começar prova de ' + questions().length + ' questões', () => { data.answers = []; move('quiz'); }), back('time'));
+      begin, back('time'));
   }
 
   function quiz() {
@@ -72,13 +77,14 @@ export function renderHome(box, page) {
         button(choice, () => { data.answers.push(i); save(); quiz(); }, 'learn-option'))));
   }
 
-  function itinerary() {
+  function itinerary(number = cycle) {
     const ordered = ranked().sort((a, b) => score(a) / totalFor(a) - score(b) / totalFor(b));
     const path = [];
     const review = [];
     for (const id of ordered) {
       subjects[id].lessons.forEach((unit, i) => {
-        const item = { ...unit, id, key: id + '-' + i };
+        const baseKey = id + '-' + i;
+        const item = { ...unit, id, baseKey, key: baseKey + (number > 1 ? '~' + number : '') };
         if (i === 0 && levelFor(id) === 2) review.push(item);
         else path.push(item);
       });
@@ -95,51 +101,114 @@ export function renderHome(box, page) {
   }
 
   function lesson(unit) {
-    const q = unit.practice;
-    const feedback = h('div', { class: 'learn-feedback', role: 'status' });
-    const choices = h('div', { class: 'learn-options' }, q.choices.map((choice, i) => button(choice, () => {
-      if (i !== q.answer) {
-        feedback.replaceChildren(h('b', {}, 'Tente outra resposta'), h('p', {}, q.why));
+    const roundKey = key + '.round.' + unit.key;
+    const recentKey = key + '.recent.' + unit.baseKey;
+    let round = store.get(roundKey, null);
+    function start() {
+      const previous = round?.items.map(q => q.prompt) || store.get(recentKey, []);
+      round = { unit: unit.key, items: newRound(practicePool(unit), previous),
+        cursor: 0, hearts: 3, selected: null };
+      store.set(recentKey, round.items.map(q => q.prompt));
+      persist();
+    }
+    function persist() { store.set(roundKey, round); }
+    if (!round || round.unit !== unit.key || round.finished) start();
+
+    function show() {
+      if (round.hearts === 0) {
+        paint(link('← Trilha', mapHref, 'learn-back'), title('Vamos tentar de novo?'),
+          h('p', {}, 'Os três corações acabaram. Você começa com três novos corações e outras questões sobre ' + unit.title + '.'),
+          button('Recomeçar atividade', () => { start(); show(); }));
         return;
       }
-      if (!data.completed[unit.key]) data.completed[unit.key] = isoDay();
-      save();
-      choices.querySelectorAll('button').forEach(b => { b.disabled = true; });
-      feedback.replaceChildren(h('b', {}, 'Resposta certa!'), h('p', {}, q.why), link('Voltar à trilha', '#/hoje'));
-    }, 'learn-option')));
-    paint(link('← Trilha', '#/hoje', 'learn-back'), h('p', { class: 'learn-subject' }, subjects[unit.id].name),
-      title(unit.title), h('p', {}, unit.text), h('aside', { class: 'worked-example' }, h('b', {}, 'Exemplo'), h('p', {}, unit.example)),
-      h('h2', {}, q.prompt), choices, feedback);
+      const q = round.items[round.cursor];
+      const answered = round.selected !== null;
+      const choices = q.choices.map((choice, i) => h('button', {
+        type: 'button', disabled: answered,
+        class: 'learn-option' + (answered && i === q.answer ? ' correct' : answered && i === round.selected ? ' incorrect' : ''),
+        onclick: () => {
+          if (round.selected !== null) return;
+          round.selected = i;
+          if (i !== q.answer) round.hearts--;
+          persist();
+          if (!round.hearts) showLastError(q);
+          else show();
+        }
+      }, choice));
+      function advance() {
+        if (round.cursor + 1 === round.items.length) {
+          round.finished = true;
+          persist();
+          data.completed[unit.key] ||= isoDay();
+          if (cycle === latestCycle && itinerary().every(item => data.completed[item.key])) data.cycle = latestCycle + 1;
+          save();
+          paint(title('Aula concluída!'), h('p', {}, unit.title), link('Continuar na trilha', '#/hoje'));
+        } else {
+          round.cursor++; round.selected = null; persist(); show();
+        }
+      }
+      paint(link('← Trilha', mapHref, 'learn-back'),
+        h('div', { class: 'round-stats' }, h('span', {}, 'Questão ' + (round.cursor+1) + ' de ' + round.items.length),
+          h('span', { class: 'hearts', 'aria-label': round.hearts + ' de 3 corações' }, '♥'.repeat(round.hearts) + '♡'.repeat(3-round.hearts))),
+        h('p', { class: 'learn-subject' }, unit.title), title(q.prompt),
+        h('details', { class: 'worked-example' }, h('summary', {}, 'Relembrar o tema'), h('p', {}, unit.text), unit.example ? h('p', {}, unit.example) : null),
+        h('div', { class: 'learn-options' }, choices),
+        answered ? h('div', { class: 'learn-feedback', role: 'status' },
+          h('b', {}, round.selected === q.answer ? 'Resposta certa!' : 'Resposta correta: ' + q.choices[q.answer]),
+          h('p', {}, q.why), button(round.cursor + 1 === round.items.length ? 'Concluir aula' : 'Próxima questão', advance)) : null);
+    }
+    function showLastError(q) {
+      paint(title('Os três corações acabaram'), h('p', {}, 'Resposta correta: ' + q.choices[q.answer]),
+        h('p', {}, q.why), button('Recomeçar com outras questões', () => { start(); show(); }), link('Voltar à trilha', mapHref, 'learn-back'));
+    }
+    show();
   }
 
   function map() {
     const units = itinerary();
     const next = units.find(unit => !data.completed[unit.key]);
-    const today = units.filter(unit => data.completed[unit.key] === isoDay()).length;
-    const daily = Math.min(units.length, Math.max(1, Math.floor(data.minutes / 10)));
-    const nodes = units.map((unit, i) => {
+    const today = Object.values(data.completed).filter(date => date === isoDay()).length;
+    const daily = Math.max(1, Math.floor(data.minutes / 10));
+    const openUnit = (unit, child, cls) => h('a', { href: '#/hoje/' + unit.key, class: cls,
+      onclick: e => {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        guide('atividade', 'Quatro questões, três corações',
+          'Responda uma vez e leia a explicação antes de avançar. Se os corações acabarem, você poderá tentar outras questões do mesmo tema.',
+          () => { location.hash = '#/hoje/' + unit.key; });
+      }
+    }, child);
+    const nodes = [...units, ...editalUnits].map((unit, i) => {
       const done = Boolean(data.completed[unit.key]);
       const active = unit === next;
-      return h('li', { class: 'course-stop stop-' + (i % 4) }, h('a', {
-        href: '#/hoje/' + unit.key, class: 'course-unit' + (active ? ' next' : '') + (done ? ' complete' : ''),
-        'aria-current': active ? 'step' : null
-      }, h('span', { class: 'unit-token' }, icon(done ? 'check' : subjects[unit.id].icon, 28)),
-      h('span', { class: 'unit-text' }, h('small', {}, done ? 'Concluída' : subjects[unit.id].name), h('b', {}, unit.title))));
+      const name = unit.name || subjects[unit.id].name;
+      return h('li', { class: 'course-stop stop-' + (i % 4), 'aria-current': active ? 'step' : null },
+        openUnit(unit, [
+          h('span', { class: 'unit-token' }, icon(done ? 'check' : unit.questions ? 'book' : subjects[unit.id].icon, 28)),
+          h('span', { class: 'unit-text' }, h('small', {}, done ? 'Concluída' : name), h('b', {}, unit.title))
+        ], 'course-unit' + (active ? ' next' : '') + (done ? ' complete' : '')));
     });
+    const gate = h('li', { class: 'course-gate' }, h('div', { class: 'work-stripe', 'aria-hidden': 'true' }),
+      h('b', {}, editalUnits.length ? 'Mais matérias do edital' : 'Ramo do edital bloqueado'),
+      h('p', {}, 'Escolha um edital salvo e toque em “Gerar aula deste edital”.'),
+      link(editalUnits.length ? 'Gerar outra aula do edital' : 'Escolher edital para desbloquear', '#/editais'));
+    const scroll = h('div', { class: 'course-scroll', tabindex: '0', role: 'region', 'aria-label': 'Trilha de baixo para cima' },
+      h('ol', { class: 'course-map' }, nodes, gate));
     paint(h('header', { class: 'course-cover' }, h('div', {},
       h('p', {}, data.exam), title('Minha trilha'), h('p', {}, data.minutes + ' min por dia · ' + Math.min(today, daily) + '/' + daily + ' aulas hoje'),
-      next ? link('Continuar aula →', '#/hoje/' + next.key) : h('b', {}, 'Percurso inicial concluído')),
+      next ? openUnit(next, 'Continuar aula ↑', 'learn-primary') : link('Abrir próximo ciclo ↑', '#/hoje/ciclo-' + (cycle+1))),
       createKri({ size: 105 }).el),
-      h('h2', { class: 'course-heading' }, 'Percurso inicial'), h('ol', { class: 'course-map' }, nodes),
-      !next ? h('section', { class: 'worked-example' }, h('h2', {}, 'Continue com o seu edital'),
-        h('p', {}, 'Abra o edital da sua prova para consultar as disciplinas e montar o próximo plano.'),
-        button('Montar plano do edital', () => openPlus('Plano de estudos por edital')),
-        link('Abrir meus editais', '#/editais', 'learn-back')) : null);
+      h('h2', { class: 'course-heading' }, 'Ciclo ' + cycle + ' · Suba pela trilha'), scroll,
+      cycle > 1 ? link('Ver ciclo anterior', '#/hoje/ciclo-' + (cycle-1), 'learn-back') : null);
+    requestAnimationFrame(() => {
+      const active = scroll.querySelector('.next') || scroll.querySelector('.course-unit');
+      if (active) scroll.scrollTop += active.getBoundingClientRect().bottom - scroll.getBoundingClientRect().bottom + 18;
+    });
   }
 
   function draw() {
     if (data.stage === 'ready') {
-      const unit = itinerary().find(item => item.key === page);
+      const unit = [...itinerary(), ...editalUnits].find(item => item.key === page);
       if (page === 'configurar') {
         paint(title('Ajustar minha trilha'), h('p', {}, 'Uma nova prova inicial reorganiza as aulas. As aulas concluídas ficam salvas.'),
           button('Reconfigurar percurso', () => { data.answers = []; move('goal'); }), link('Voltar à trilha', '#/hoje', 'learn-back'));
@@ -150,5 +219,16 @@ export function renderHome(box, page) {
       (screens[data.stage] || goal)();
     }
   }
+  const currentCycle = data.cycle || 1;
+  // Contas anteriores guardavam as conclusões, mas não o número do ciclo.
+  if (data.stage === 'ready' && itinerary(currentCycle).every(unit => data.completed[unit.key])) {
+    data.cycle = currentCycle + 1;
+    save();
+  }
+  const latestCycle = data.cycle || currentCycle;
+  const requestedCycle = Number(page?.match(/(?:^ciclo-|~)([1-9][0-9]*)$/)?.[1] || (page && /^(leitura|numeros|logica|ciencias|cidadania)-[01]$/.test(page) ? 1 : latestCycle));
+  const cycle = Math.max(1, Math.min(latestCycle, requestedCycle));
+  const mapHref = '#/hoje/ciclo-' + cycle;
+
   draw();
 }

@@ -243,3 +243,26 @@ kbd{margin-left:auto;font:700 .72rem 'Bricolage Grotesque',sans-serif;padding:.1
   .tabbar .tab.active .tab-icon{background:#f6df50;color:#242332;box-shadow:none}
 }
 @media(max-width:360px){.course-cover .kri{width:66px!important;height:74px!important}.unit-text{font-size:.88rem}}
+
+.course-heading,.round-stats,.course-gate,.tuck-guide{text-align:center}
+.course-scroll{height:clamp(265px,48dvh,520px);overflow-y:auto;overscroll-behavior:contain;border-block:1px solid var(--line);scrollbar-width:thin;background:var(--surface);border-radius:22px}
+.course-scroll .course-map{display:flex;flex-direction:column-reverse;width:min(100%,420px);padding:20px 8px}
+.course-scroll .course-stop{padding:10px 0;min-height:84px;justify-content:center;align-items:center}
+.course-scroll .course-unit{width:70%;transform:translateX(-6%);min-height:55px}
+.course-scroll .stop-1 .course-unit,.course-scroll .stop-3 .course-unit{transform:translateX(5%)}
+.course-scroll .stop-2 .course-unit{transform:translateX(13%)}
+.course-scroll .course-stop::after{display:none}
+.course-scroll .course-stop:not(:first-child)::before{content:"";position:absolute;bottom:-15px;left:28%;height:31px;border-left:4px dotted var(--line);transform:rotate(22deg)}
+.course-scroll .unit-text{overflow-wrap:anywhere}.unit-token .ico{display:grid;place-items:center}
+.course-gate{display:grid;gap:10px;justify-items:center;padding:12px 8px 22px}
+.work-stripe{width:min(220px,80%);height:13px;border:2px solid #302d3b;border-radius:4px;background:repeating-linear-gradient(-52deg,#f7df4d 0 14px,#302d3b 14px 24px)}
+.round-stats{display:flex;align-items:center;justify-content:space-between;font-weight:700}
+.hearts{color:#b33662;font-size:1.4rem;letter-spacing:2px}
+.learn-option.correct:disabled{background:#c8efdc;color:#194a38;opacity:1}
+.learn-option.incorrect:disabled{background:#f7dce6;color:#681e40;opacity:1}
+.tuck-guide{position:fixed;inset:0;margin:auto;width:min(90vw,390px);padding:26px;border:1px solid var(--line);border-radius:26px;background:var(--surface);color:var(--ink)}
+.tuck-guide::backdrop{background:#15132488}
+.tuck-guide[open]{display:grid;justify-items:center;gap:13px}
+.tuck-guide .kri{animation:tuck-arrives .55s ease-out both}
+.tuck-guide .learn-back{justify-self:center}.tuck-guide p{line-height:1.5}
+@keyframes tuck-arrives{from{opacity:0;transform:translateY(18px) rotate(-8deg)}to{opacity:1;transform:none}}

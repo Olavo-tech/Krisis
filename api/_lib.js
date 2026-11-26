@@ -100,7 +100,7 @@ export async function groqJson(apiKey, system, user, validate) {
     const body = {
       model, temperature: 0.2, response_format: { type: 'json_object' },
       max_completion_tokens: reasoning ? 6000 : 3500,
-      ...(reasoning ? { reasoning_effort: 'low', reasoning_format: 'hidden' } : {}),
+      ...(reasoning ? { reasoning_effort: 'low', include_reasoning: false } : {}),
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }]
     };
     try {
