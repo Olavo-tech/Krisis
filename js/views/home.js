@@ -1,132 +1,154 @@
-import { sb, h, icon, getQuests, getHeat, weekDone, countUp, chip, empty, store, isoDay } from '../core.js';
-import { createKri, bindPoke } from '../mascot.js';
-import { cmdBar } from './command.js';
-import { parseDeadlines, daysLeft, whenLabel } from './prazos.js';
+import { h, icon, state, store, isoDay } from '../core.js';
+import { openPlus } from './plus.js';
+import { createKri } from '../mascot.js';
+import { subjects, tracks } from './curriculum.js';
 
-const LINK = { tarefas: '#/tarefas', revisao: '#/cartoes', foco: '#/foco', edital: '#/analisar' };
+const button = (label, fn, cls = 'learn-primary') => h('button', { type: 'button', class: cls, onclick: fn }, label);
+const link = (label, href, cls = 'learn-primary') => h('a', { class: cls, href }, label);
+const levels = ['Fundamentos', 'Em desenvolvimento', 'Aplicação'];
 
-function rel(d) {
-  const s = Math.round((Date.now() - new Date(d).getTime()) / 1000);
-  if (s < 60) return 'agora';
-  if (s < 3600) return 'há ' + Math.floor(s / 60) + ' min';
-  if (s < 86400) return 'há ' + Math.floor(s / 3600) + ' h';
-  return 'há ' + Math.floor(s / 86400) + ' d';
-}
+export function renderHome(box, page) {
+  const key = 'eduquack.learning.v1.' + state.user.id;
+  const data = store.get(key, { exam: '', track: 'geral', minutes: 20, weak: [], answers: [], completed: {}, stage: 'goal' });
+  const save = () => store.set(key, data);
+  const topics = () => tracks[data.track].subjects;
+  const ranked = () => [...topics()].sort((a, b) => Number(data.weak.includes(b)) - Number(data.weak.includes(a)));
+  const questions = () => ranked().flatMap(id => subjects[id].test.slice(0, data.weak.includes(id) ? 3 : 2).map((q, index) => ({ ...q, id, index })));
+  const score = id => questions().reduce((n, q, i) => n + Number(q.id === id && data.answers[i] === q.answer), 0);
+  const totalFor = id => questions().filter(q => q.id === id).length;
+  const levelFor = id => score(id) === totalFor(id) ? 2 : Number(score(id) > 0);
+  const paint = (...children) => {
+    box.replaceChildren(h('div', { class: 'learning' }, ...children));
+    window.scrollTo(0, 0);
+    box.querySelector('h1')?.focus({ preventScroll: true });
+  };
+  const title = text => h('h1', { tabindex: '-1' }, text);
+  const step = (i, total) => h('div', { class: 'learn-progress' }, h('span', {}, 'Etapa ' + i + ' de ' + total),
+    h('progress', { max: total, value: i, 'aria-label': 'Configuração da trilha' }));
+  const move = stage => { data.stage = stage; save(); draw(); };
+  const back = stage => button('Voltar', () => move(stage), 'learn-back');
 
-function pl(tone, pat, tag, big, small, href) {
-  const n = h('b', { class: 'n' }, typeof big === 'number' ? '0' : big);
-  if (typeof big === 'number') requestAnimationFrame(() => countUp(n, big));
-  return h('a', { class: 'pl pat pat-' + pat + ' ' + tone, href }, h('div', { class: 'pl-top' }, h('span', { class: 'tag' }, tag), h('span', { class: 'pl-go' }, icon('arrow', 16))), h('div', {}, n, h('small', {}, small)));
-}
-
-function weekStrip() {
-  const days = new Set(store.get('krisis.days', []));
-  const t = new Date();
-  const dow = (t.getDay() + 6) % 7;
-  const names = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-  return h('div', { class: 'week' }, names.map((n, i) => {
-    const d = new Date(t); d.setDate(t.getDate() - dow + i);
-    return h('div', { class: 'day' + (days.has(isoDay(d)) ? ' on' : '') + (i === dow ? ' today' : '') }, h('i', {}), h('span', {}, n), h('b', {}, String(d.getDate())));
-  }));
-}
-
-const STEPS = [
-  { key: 'foco', title: 'Fazer uma sessão de foco', tone: 'peach', offset: 0 },
-  { key: 'revisao', title: 'Revisar cartões', tone: 'violet', offset: -1 },
-  { key: 'tarefas', title: 'Concluir tarefas', tone: 'mint', offset: 0 },
-  { key: 'edital', title: 'Analisar um edital', tone: 'gold', offset: 1 }
-];
-
-function trailSteps(due, open) {
-  const quests = getQuests();
-  const steps = STEPS.map((step) => ({ ...quests.find((q) => q.k === step.key), ...step }));
-  const available = { foco: true, revisao: due > 0, tarefas: open > 0, edital: true };
-  const next = steps.find((step) => !step.complete && available[step.key]);
-  const href = (step) => step.key === 'revisao' && due ? '#/cartoes/revisar' : LINK[step.key];
-
-  return h('ol', { class: 'trail-steps' }, steps.map((step) => {
-    const current = step === next;
-    const status = step.complete ? 'Concluído' : step.n > 1 ? step.done + ' de ' + step.n : '';
-    return h('li', { class: 'trail-step', style: '--offset:' + step.offset },
-      h('a', { class: 'trail-link ' + step.tone + (current ? ' current' : ''), href: href(step), title: step.t + ' (+' + step.xp + ' XP)',
-        'aria-current': current ? 'step' : null },
-        h('span', { class: 'trail-icon' }, icon(step.complete ? 'check' : step.ic, 25)),
-        h('span', { class: 'trail-label' }, current ? h('small', {}, 'Próximo passo') : null,
-          h('strong', {}, step.title), status ? h('small', {}, status) : null)));
-  }));
-}
-
-function heatCard() {
-  const w = weekDone();
-  return h('section', { class: 'card' },
-    h('div', { class: 'card-h' }, h('h3', {}, 'Constância'), chip(w + ' de 5 dias nesta semana', w >= 5 ? 'green' : '')),
-    h('div', { class: 'heat' }, getHeat(15).map((c, i) => h('i', { class: 'hc l' + c.l + (c.today ? ' today' : ''), style: '--i:' + i, title: c.date }))),
-    h('div', { class: 'heat-leg muted' }, 'menos', [0, 1, 2, 3, 4].map((l) => h('i', { class: 'hc l' + l })), 'mais'));
-}
-
-export async function renderHome(box) {
-  const trail = h('section', { class: 'trail', 'aria-labelledby': 'trail-title' });
-  const quests = getQuests();
-  const done = quests.filter((quest) => quest.complete).length;
-  const kri = createKri({ size: 122 });
-  bindPoke(kri);
-  trail.append(h('div', { class: 'trail-head' },
-    h('div', {}, h('h2', { id: 'trail-title' }, 'Sua trilha de hoje'),
-      h('p', {}, done === quests.length ? 'Missões de hoje concluídas' : done + ' de ' + quests.length + ' missões concluídas')),
-    h('progress', { max: quests.length, value: done, 'aria-label': 'Missões concluídas' })),
-    h('div', { class: 'trail-map' }, trailSteps(0, 0), h('div', { class: 'trail-kri' }, kri.el)));
-  const more = h('details', { class: 'home-more' },
-    h('summary', {}, 'Meu painel'),
-    h('div', { class: 'cmd-wrap' }, cmdBar()),
-    weekStrip());
-  const desktop = window.matchMedia('(min-width: 901px)');
-  more.open = desktop.matches;
-  box.append(trail, more);
-
-  const now = new Date().toISOString();
-  const [c, t, p, tk, e] = await Promise.all([
-    sb.from('flashcards').select('id', { count: 'exact', head: true }).lte('due_at', now),
-    sb.from('tasks').select('id', { count: 'exact', head: true }).eq('done', false),
-    sb.from('pages').select('id,title,updated_at').eq('is_archived', false).order('updated_at', { ascending: false }).limit(5),
-    sb.from('tasks').select('id,title,done,created_at').order('created_at', { ascending: false }).limit(5),
-    sb.from('editais_salvos').select('id,titulo,analysis,created_at').order('created_at', { ascending: false }).limit(60)
-  ]);
-  const due = c.count || 0, open = t.count || 0, eds = e.data || [];
-  const dls = parseDeadlines(eds).filter((d) => daysLeft(d.date) >= 0).slice(0, 3);
-  const feedItems = [
-    ...(p.data || []).map((x) => ({ t: x.updated_at, ic: 'file', tx: 'Você editou ', b: x.title || 'Sem título', href: '#/pagina/' + x.id })),
-    ...(tk.data || []).map((x) => ({ t: x.created_at, ic: 'check', tx: x.done ? 'Tarefa concluída: ' : 'Nova tarefa: ', b: x.title, href: '#/tarefas' })),
-    ...eds.slice(0, 5).map((x) => ({ t: x.created_at, ic: 'folder', tx: 'Edital salvo: ', b: x.titulo, href: '#/editais' }))
-  ].sort((a, b) => new Date(b.t) - new Date(a.t)).slice(0, 7);
-
-  if (due || open) {
-    const links = trailSteps(due, open).querySelectorAll('.trail-link');
-    // Keep the focused link and the mascot instance while the counts load.
-    trail.querySelector('.trail-steps').querySelectorAll('a').forEach((link, i) => {
-      const updated = links[i];
-      if (link.className === updated.className && link.hash === updated.hash) return;
-      link.className = updated.className;
-      link.setAttribute('href', updated.getAttribute('href'));
-      if (updated.hasAttribute('aria-current')) link.setAttribute('aria-current', 'step');
-      else link.removeAttribute('aria-current');
-      link.lastElementChild.replaceChildren(...updated.lastElementChild.childNodes);
-    });
+  function goal() {
+    const name = h('input', { class: 'input', maxlength: 120, required: true, value: data.exam, placeholder: 'Ex.: INSS, TJSP ou ENEM' });
+    const area = h('select', { class: 'input' }, Object.entries(tracks).map(([id, track]) => h('option', { value: id, selected: id === data.track }, track.name)));
+    const update = () => {
+      if (!name.value.trim()) { name.focus(); return; }
+      data.exam = name.value.trim();
+      if (data.track !== area.value) data.weak = [];
+      data.track = area.value;
+      move('time');
+    };
+    paint(step(1, 3), title('Qual prova você quer fazer?'),
+      h('form', { class: 'learn-form', onsubmit: e => { e.preventDefault(); update(); } },
+        h('label', {}, 'Nome da prova', name), h('label', {}, 'Área de preparação', area),
+        h('button', { class: 'learn-primary', type: 'submit' }, 'Continuar')));
   }
-  more.append(
-    h('div', { class: 'plan' },
-      pl('lime', 'dots', 'Revisar', due, due === 1 ? 'cartão pronto' : 'cartões prontos', '#/cartoes'),
-      pl('sky', 'stripes', 'Tarefas', open, open === 1 ? 'tarefa aberta' : 'tarefas abertas', '#/tarefas'),
-      pl('butter', 'checks', 'Radar', dls.length ? whenLabel(daysLeft(dls[0].date)) : 'Sem prazos', dls.length ? dls[0].label.slice(0, 40) : 'Salve um edital', '#/prazos'),
-      pl('ink', 'waves', 'Mágico', 'Jogue aqui', 'Eu organizo seu material', '#/magico')),
-    h('div', { class: 'home-grid' },
-      h('div', { class: 'col' }, heatCard()),
-      h('div', { class: 'col' },
-        h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Próximos prazos'), h('a', { class: 'link', href: '#/prazos' }, 'Ver todos')),
-          dls.length
-            ? h('div', { class: 'feed' }, dls.map((d) => { const n = daysLeft(d.date); return h('a', { class: 'feed-i', href: '#/prazos' }, h('span', { class: 'feed-ic' }, icon('calendar', 16)), h('div', { class: 'feed-b' }, h('b', {}, d.label), h('span', { class: 'muted' }, d.edital)), chip(whenLabel(n), n <= 3 ? 'rose' : 'blue')); }))
-            : h('p', { class: 'muted' }, 'Salve um edital para ver os prazos aqui.')),
-        h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, 'Atividade recente')),
-          feedItems.length
-            ? h('div', { class: 'feed' }, feedItems.map((f) => h('a', { class: 'feed-i', href: f.href }, h('span', { class: 'feed-ic' }, icon(f.ic, 16)), h('div', { class: 'feed-b' }, h('span', {}, f.tx), h('b', {}, f.b)), h('span', { class: 'muted feed-t' }, rel(f.t)))))
-            : empty('Nada por aqui ainda', 'Crie uma página ou uma tarefa e ela aparece neste feed.')))));
+
+  function time() {
+    paint(step(2, 3), title('Quanto tempo cabe no seu dia?'),
+      h('p', {}, 'Escolha uma meta diária para as suas aulas.'),
+      h('div', { class: 'learn-options' }, [10, 20, 30, 45, 60].map(n =>
+        button(n + ' minutos', () => { data.minutes = n; move('weak'); }, 'learn-option'))), back('goal'));
+  }
+
+  function weakness() {
+    paint(step(3, 3), title('Onde você precisa de mais prática?'),
+      h('p', {}, 'Marque as matérias que quiser priorizar na prova inicial.'),
+      h('div', { class: 'learn-options' }, topics().map(id =>
+        h('label', { class: 'learn-option' }, h('input', { type: 'checkbox', checked: data.weak.includes(id),
+          onchange: e => { data.weak = data.weak.filter(x => x !== id); if (e.target.checked) data.weak.push(id); save(); } }), subjects[id].name))),
+      button('Começar prova de ' + questions().length + ' questões', () => { data.answers = []; move('quiz'); }), back('time'));
+  }
+
+  function quiz() {
+    const qs = questions();
+    const index = data.answers.length;
+    const q = qs[index];
+    if (!q) { move('result'); return; }
+    paint(h('div', { class: 'learn-progress' }, h('span', {}, 'Questão ' + (index + 1) + ' de ' + qs.length),
+      h('progress', { value: index, max: qs.length, 'aria-label': 'Prova inicial' })),
+      h('p', { class: 'learn-subject' }, subjects[q.id].name), title(q.prompt),
+      h('div', { class: 'learn-options' }, [...q.choices, 'Ainda não sei'].map((choice, i) =>
+        button(choice, () => { data.answers.push(i); save(); quiz(); }, 'learn-option'))));
+  }
+
+  function itinerary() {
+    const ordered = ranked().sort((a, b) => score(a) / totalFor(a) - score(b) / totalFor(b));
+    const path = [];
+    const review = [];
+    for (const id of ordered) {
+      subjects[id].lessons.forEach((unit, i) => {
+        const item = { ...unit, id, key: id + '-' + i };
+        if (i === 0 && levelFor(id) === 2) review.push(item);
+        else path.push(item);
+      });
+    }
+    return [...path, ...review];
+  }
+
+  function result() {
+    const first = itinerary()[0];
+    paint(h('p', { class: 'learn-subject' }, 'Resultado da prova inicial'), title('Seu ponto de partida'),
+      h('p', {}, 'Sua primeira aula será “' + first.title + '”. A ordem considera seus acertos e as dificuldades que você marcou.'),
+      h('ul', { class: 'level-list' }, topics().map(id => h('li', {}, h('b', {}, subjects[id].name), h('span', {}, levels[levelFor(id)] + ' · ' + score(id) + '/' + totalFor(id))))),
+      button('Ver minha trilha', () => { move('ready'); if (page) location.hash = '#/hoje'; }));
+  }
+
+  function lesson(unit) {
+    const q = unit.practice;
+    const feedback = h('div', { class: 'learn-feedback', role: 'status' });
+    const choices = h('div', { class: 'learn-options' }, q.choices.map((choice, i) => button(choice, () => {
+      if (i !== q.answer) {
+        feedback.replaceChildren(h('b', {}, 'Tente outra resposta'), h('p', {}, q.why));
+        return;
+      }
+      if (!data.completed[unit.key]) data.completed[unit.key] = isoDay();
+      save();
+      choices.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      feedback.replaceChildren(h('b', {}, 'Resposta certa!'), h('p', {}, q.why), link('Voltar à trilha', '#/hoje'));
+    }, 'learn-option')));
+    paint(link('← Trilha', '#/hoje', 'learn-back'), h('p', { class: 'learn-subject' }, subjects[unit.id].name),
+      title(unit.title), h('p', {}, unit.text), h('aside', { class: 'worked-example' }, h('b', {}, 'Exemplo'), h('p', {}, unit.example)),
+      h('h2', {}, q.prompt), choices, feedback);
+  }
+
+  function map() {
+    const units = itinerary();
+    const next = units.find(unit => !data.completed[unit.key]);
+    const today = units.filter(unit => data.completed[unit.key] === isoDay()).length;
+    const daily = Math.min(units.length, Math.max(1, Math.floor(data.minutes / 10)));
+    const nodes = units.map((unit, i) => {
+      const done = Boolean(data.completed[unit.key]);
+      const active = unit === next;
+      return h('li', { class: 'course-stop stop-' + (i % 4) }, h('a', {
+        href: '#/hoje/' + unit.key, class: 'course-unit' + (active ? ' next' : '') + (done ? ' complete' : ''),
+        'aria-current': active ? 'step' : null
+      }, h('span', { class: 'unit-token' }, icon(done ? 'check' : subjects[unit.id].icon, 28)),
+      h('span', { class: 'unit-text' }, h('small', {}, done ? 'Concluída' : subjects[unit.id].name), h('b', {}, unit.title))));
+    });
+    paint(h('header', { class: 'course-cover' }, h('div', {},
+      h('p', {}, data.exam), title('Minha trilha'), h('p', {}, data.minutes + ' min por dia · ' + Math.min(today, daily) + '/' + daily + ' aulas hoje'),
+      next ? link('Continuar aula →', '#/hoje/' + next.key) : h('b', {}, 'Percurso inicial concluído')),
+      createKri({ size: 105 }).el),
+      h('h2', { class: 'course-heading' }, 'Percurso inicial'), h('ol', { class: 'course-map' }, nodes),
+      !next ? h('section', { class: 'worked-example' }, h('h2', {}, 'Continue com o seu edital'),
+        h('p', {}, 'Abra o edital da sua prova para consultar as disciplinas e montar o próximo plano.'),
+        button('Montar plano do edital', () => openPlus('Plano de estudos por edital')),
+        link('Abrir meus editais', '#/editais', 'learn-back')) : null);
+  }
+
+  function draw() {
+    if (data.stage === 'ready') {
+      const unit = itinerary().find(item => item.key === page);
+      if (page === 'configurar') {
+        paint(title('Ajustar minha trilha'), h('p', {}, 'Uma nova prova inicial reorganiza as aulas. As aulas concluídas ficam salvas.'),
+          button('Reconfigurar percurso', () => { data.answers = []; move('goal'); }), link('Voltar à trilha', '#/hoje', 'learn-back'));
+      } else if (unit) lesson(unit);
+      else map();
+    } else {
+      const screens = { goal, time, weak: weakness, quiz, result };
+      (screens[data.stage] || goal)();
+    }
+  }
+  draw();
 }

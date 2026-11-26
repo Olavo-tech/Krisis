@@ -1,4 +1,4 @@
-// /api/icon?s=192 — ícone PNG do app (rosto do Krispim), gerado sem bibliotecas.
+// /api/icon?s=192 — ícone PNG do app (rosto do Tuck), gerado sem bibliotecas.
 import zlib from 'node:zlib';
 
 const T = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
@@ -10,7 +10,7 @@ function chunk(type, data) {
   return Buffer.concat([len, td, crc]);
 }
 
-const ORANGE = [255, 106, 19], BLACK = [11, 11, 15], WHITE = [255, 255, 255];
+const YELLOW = [255, 225, 88], BLACK = [11, 11, 15], WHITE = [255, 255, 255];
 function shade(u, v) {
   const d = (cx, cy) => Math.hypot(u - cx, v - cy);
   // brilho dos olhos
@@ -24,7 +24,7 @@ function shade(u, v) {
   if (r > 0.1 && r < 0.13 && v > 0.64 && Math.abs(u - 0.51) < 0.11) return BLACK;
   // brotinho
   if (d(0.5, 0.17) < 0.045) return BLACK;
-  return ORANGE;
+  return YELLOW;
 }
 
 export default function handler(req, res) {

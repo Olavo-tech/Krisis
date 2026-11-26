@@ -33,7 +33,7 @@ export function renderLanding({ onLogin, onSignup }) {
         tile('blush', 'waves', 'timer', 'Foco e constância', 'Pomodoro, missões diárias e sequência para transformar estudo em hábito.')),
       h('section', { class: 'land-how' }, h('h2', {}, 'O que só o Eduquack tem'),
         h('div', { class: 'diffs' },
-          h('div', { class: 'tile orange pat pat-dots' }, ic('wand', 24), h('h3', {}, 'Captura mágica'), h('p', {}, 'Cole, envie um PDF, dite por voz ou compartilhe de outro app. A IA cria página, cartões e tarefas sozinha.')),
+          h('div', { class: 'tile yellow pat pat-dots' }, ic('wand', 24), h('h3', {}, 'Captura mágica'), h('p', {}, 'Cole, envie um PDF, dite por voz ou compartilhe de outro app. A IA cria página, cartões e tarefas sozinha.')),
           h('div', { class: 'tile pat pat-stripes' }, ic('calendar', 24), h('h3', {}, 'Radar de prazos'), h('p', {}, 'Lê as datas dos editais que você salva, conta os dias e cria a tarefa com um toque.')),
           h('div', { class: 'tile pat pat-waves' }, ic('chat', 24), h('h3', {}, 'Tutor ' + MASCOT), h('p', {}, 'Pergunte qualquer dúvida e receba resposta com base nas suas próprias páginas.')),
           h('div', { class: 'tile pat pat-checks' }, ic('command', 24), h('h3', {}, 'Barra de comando'), h('p', {}, 'Escreva "tarefa: revisar química amanhã" ou busque em tudo. Atalho: Ctrl+K.')),
@@ -42,17 +42,16 @@ export function renderLanding({ onLogin, onSignup }) {
       h('section', { class: 'land-faq' }, h('h2', {}, 'Perguntas frequentes'),
         h('details', {}, h('summary', {}, 'O Eduquack é gratuito?'), h('p', {}, 'Sim. Leitura de editais, radar de prazos, páginas, tarefas, cartões e foco são gratuitos. Os recursos de IA (captura mágica, plano de estudos, cartões por IA e tutor) ficam no plano Plus, que será lançado em breve.')),
         h('details', {}, h('summary', {}, 'Funciona como app no celular?'), h('p', {}, 'Sim. Abra pelo navegador, toque para entrar em tela cheia e, se quiser, instale na tela inicial.')),
-        h('details', {}, h('summary', {}, 'Quem é o ' + MASCOT + '?'), h('p', {}, 'O mascote do Eduquack. Ele acompanha seus estudos, comemora suas conquistas e dá dicas. Você pode arrastá-lo pela tela e fazer cócegas.')),
+        h('details', {}, h('summary', {}, 'Quem é o ' + MASCOT + '?'), h('p', {}, 'O mascote do Eduquack. Ele acompanha seus estudos, comemora suas conquistas e dá dicas. Encontre o Tuck na trilha e no seu perfil.')),
         h('details', {}, h('summary', {}, 'Meus dados ficam seguros?'), h('p', {}, 'Cada conta só acessa os próprios dados, e você pode excluir sua conta quando quiser.')))),
     h('footer', { class: 'muted', style: 'margin-top:48px;font-weight:600' }, 'Eduquack · Confira sempre o documento oficial do edital.'));
 
-  const mobile = h('div', { class: 'land-m' },
-    h('div', { class: 'wm' }, h('i', { class: 'b1' }), h('i', { class: 'b2' }), h('i', { class: 'b3' }),
-      h('div', { class: 'wm-mid' },
-        h('h1', {}, 'Bora estudar sem sair do app?'),
-        h('p', {}, 'Edital, prazos, cartões e foco num lugar só. O ' + MASCOT + ' estuda com você.'),
-        h('div', { class: 'wm-btns' }, h('button', { class: 'btn green', onclick: onSignup }, 'Criar conta'), h('button', { class: 'btn', onclick: onLogin }, 'Já tenho conta'))),
-      h('div', { class: 'wm-kri' }, kri2.el)));
+  const mobile = h('main', { class: 'land-m' },
+    h('section', { class: 'welcome-duck' }, h('b', {}, 'Eduquack'), kri2.el),
+    h('section', { class: 'welcome-copy' }, h('h1', {}, 'Sua prova, sua trilha.'),
+      h('p', {}, 'Escolha a prova e descubra por qual aula começar com o Tuck.'),
+      h('div', { class: 'wm-btns' }, h('button', { class: 'learn-primary', onclick: onSignup }, 'Criar minha trilha'),
+      h('button', { class: 'learn-back', onclick: onLogin }, 'Já tenho conta'))));
 
   return h('div', { class: 'landing' }, desktop, mobile);
 }

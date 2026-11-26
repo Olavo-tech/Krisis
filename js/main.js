@@ -18,8 +18,8 @@ import { renderEu } from './views/eu.js';
 import { openPalette } from './views/command.js';
 import { openTutor } from './views/tutor.js';
 import { initSfx } from './sfx.js';
-import { tapToStart } from './native.js';
-import { startMascot, unmountPet, MASCOT } from './mascot.js';
+import { enableFullscreenPreference } from './native.js';
+import { MASCOT } from './mascot.js';
 
 const root = document.getElementById('app');
 let theme = store.get('krisis.theme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -30,7 +30,7 @@ store.set('krisis.lastVisit', new Date().toISOString());
 function applyTheme() {
   document.documentElement.setAttribute('data-theme', theme);
   const m = document.querySelector('meta[name=theme-color]');
-  if (m) m.setAttribute('content', theme === 'dark' ? '#0b0b0f' : '#fff6e8');
+  if (m) m.setAttribute('content', theme === 'dark' ? '#0b0b0f' : '#fafaf5');
 }
 applyTheme();
 
@@ -50,7 +50,7 @@ const TABS = [
   ['#/cartoes', 'cards', 'Revisar', ['cartoes']],
   ['#/eu', 'user', 'Eu', ['eu']]
 ];
-const TICKER_TIPS = ['Jogue um material na Captura mágica e eu organizo tudo', 'Missões do dia renovam à meia-noite', 'Ctrl+K abre a barra de comando em qualquer tela', 'Arraste o ' + MASCOT + ' para onde preferir'];
+const TICKER_TIPS = ['Jogue um material na Captura mágica e eu organizo tudo', 'Missões do dia renovam à meia-noite', 'Ctrl+K abre a barra de comando em qualquer tela'];
 
 function lastLabel() {
   if (!prevVisit) return 'Primeira vez por aqui';
@@ -175,14 +175,12 @@ async function route() {
 function render() {
   root.replaceChildren();
   if (!state.user) {
-    unmountPet();
     delete document.body.dataset.route;
     root.append(renderLanding({ onLogin: () => openAuthScreen('login'), onSignup: () => openAuthScreen('signup') }));
     return;
   }
   root.append(buildShell());
   route();
-  startMascot(displayName().split(' ')[0]);
 }
 
 function handleShare() {
@@ -204,7 +202,8 @@ async function boot() {
     root.replaceChildren(h('main', { class: 'boot' }, h('h1', {}, 'Eduquack'), h('p', {}, 'Não foi possível carregar um recurso necessário. Verifique sua conexão e recarregue a página.')));
     return;
   }
-  const [{ data }] = await Promise.all([sb.auth.getSession(), tapToStart()]);
+  enableFullscreenPreference();
+  const { data } = await sb.auth.getSession();
   state.session = data.session;
   state.user = data.session ? data.session.user : null;
   lastUserId = state.user ? state.user.id : null;
